@@ -1,52 +1,38 @@
-var players=[];
+var players0=[];
+var players1=[];
 function setup(){
-  createCanvas(windowWidth-100, windowHeight-100);
+  windowWidth -= 90;
+  windowHeight -= 90;
+  createCanvas(windowWidth, windowHeight);
   noStroke();
   rectMode(CENTER);
   //Create players, balls and goals
   for (let i=0; i<5; i++){
-    players.push(new Player(round(random(width/2)), round(random(height))));
+    players0.push(new Player(round(random(width/2)), round(random(height)), 0));
   }
+  goal0 = new Goal(0, windowHeight/2);
+  for (let i=0; i<5; i++){
+    players1.push(new Player(round(random(width/2, windowWidth)), round(random(height)), 1));
+  }
+  goal1 = new Goal(1820, windowHeight/2);
   ball = new Ball(windowWidth/2, windowHeight/2);
-  goalL = new Goal(0, windowHeight/2);
 }
 
 function draw(){
   background(255);
-  //Move player around
-  if (keyIsDown(UP_ARROW)){
-    players[0].forward(-3);
-  }
-  if (keyIsDown(DOWN_ARROW)){
-    players[0].forward(3);
-  }
-  if (keyIsDown(RIGHT_ARROW)){
-    players[0].side(3);
-  }
-  if (keyIsDown(LEFT_ARROW)){
-    players[0].side(-3);
-  }
-  if (keyIsDown(SHIFT)){
-    players[0].kick = true;
-  }
-  var dx = players[0].x - ball.x;
-  var dy = players[0].y - ball.y;
-  //Player-ball collision logic
-  if (sqrt(sq(dx)+sq(dy)) < ball.r + players[0].r){
-    ball.collision(dx, dy, players[0].kick);
-  }
-  //Goal logic
-  if (ball.x < 40 && ball.y < goalL.y+40 && goalL.y-40 < ball.y){
-    ball.x = windowWidth/2;
-    ball.y = windowHeight/2;
-  }
+  logic(players0, players1, ball);
   //Render objects
-  players[0].render();
+  for (let i=0; i<players0.length; i++){
+    players0[i].render();
+    players1[i].render();
+  }
   ball.render();
-  goalL.render();
+  goal0.render();
+  goal1.render();
 }
 
-function Player(xx,yy){
+function Player(xx,yy,tt){
+  this.t = tt;
   this.r = 20;
   this.x = xx;
   this.y = yy;
@@ -91,5 +77,26 @@ function Goal(xx,yy){
   this.y = yy;
   this.render = function(){
     rect(this.x, this.y, 40, 160);
+  }
+}
+
+function logic(players0, players1, ball) {
+  this.players = players0.concat(players1);
+  //Player-ball collision logic
+  for (let i=0; i<players.length; i++){
+    var dx = players[i].x - ball.x;
+    var dy = players[i].y - ball.y;
+    if (sqrt(sq(dx)+sq(dy)) < ball.r + players[i].r){
+      ball.collision(dx, dy, players[i].kick);
+    }
+  }
+  //Goal detection logic
+  if (ball.x < 40 && ball.y < goal0.y+40 && goal0.y-40 < ball.y){
+    ball.x = windowWidth/2;
+    ball.y = windowHeight/2;
+  }
+  if (ball.x < 40 && ball.y < goal1.y+40 && goal1.y-40 < ball.y){
+    ball.x = windowWidth/2;
+    ball.y = windowHeight/2;
   }
 }

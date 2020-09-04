@@ -1,2 +1,2 @@
 # learnball
-Ground up neural network exploration of teamwork based machine learning, coded from scratch in Python.
+Ground up web-based neural network exploration of teamwork in machine learning, coded from scratch in JavaScript.
