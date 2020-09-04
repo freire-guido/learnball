@@ -37,15 +37,20 @@ function Player(xx,yy,tt){
   this.x = xx;
   this.y = yy;
   this.kick = false;
-  this.forward = function(f){
+  this.forward = (f)=> {
     this.y += f;
   }
-  this.side = function(s){
+  this.side = (s)=> {
     this.x += s;
   }
-  this.render = function(){
+  this.render = ()=> {
     this.kick = false;
-    fill(0,255,0);
+    if (this.t==1){
+      fill(0,0,255);
+    }
+    else {
+      fill(255,0,0)
+    }
     ellipse(this.x, this.y, this.r*2);
   }
 }
@@ -54,10 +59,8 @@ function Ball(xx,yy){
   this.r = 10;
   this.x = xx;
   this.y = yy;
-  this.collision = function(dx,dy,kick){
-    print("collision");
+  this.collision = (dx,dy,kick)=> {
     if (kick){
-      print("kick");
       this.x -= dx*4;
       this.y -= dy*4;
     }
@@ -66,8 +69,8 @@ function Ball(xx,yy){
       this.y -= dy;
     }
   }
-  this.render = function(){
-    fill(255,0,0);
+  this.render = ()=> {
+    fill(0,255,0);
     ellipse(this.x, this.y, this.r*2);
   }
 }
@@ -75,7 +78,7 @@ function Ball(xx,yy){
 function Goal(xx,yy){
   this.x = xx;
   this.y = yy;
-  this.render = function(){
+  this.render = ()=> {
     rect(this.x, this.y, 40, 160);
   }
 }
