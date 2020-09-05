@@ -1,23 +1,28 @@
 class NLayer {
   constructor(size, inputs, position) {
-    this.inputs = inputs;
     this.outputs = new Array(size);
     this.weights = new Array(size);
     this.biases = new Array(size);
     this.pos = position;
     //Initialize random weights and biases
-    for (let o=0; o<this.weights.length; o++){
-      this.weights[o] = new Array(inputs.length);
-      this.biases[o] = Math.random();
-      for (let i=0; i<this.inputs.length; i++){
-        this.weights[o][i] = Math.random();
+    if (this.pos != 0){
+      for (let o=0; o<this.weights.length; o++){
+        this.weights[o] = new Array(inputs.length);
+        this.biases[o] = Math.random();
+        for (let i=0; i<inputs.length; i++){
+          this.weights[o][i] = Math.random();
+        }
       }
     }
+    else {
+      this.outputs = inputs;
+
+    }
   }
-  forward(){
+  forward(inputs){
     for (let o=0; o<this.outputs.length; o++){
-      for (let i=0; i<this.inputs.length; i++){
-        this.outputs[o] += this.inputs[i]*this.weights[o][i];
+      for (let i=0; i<inputs.length; i++){
+        this.outputs[o] += inputs[i]*this.weights[o][i];
       }
       this.outputs[o] += this.biases[o];
     }
@@ -29,24 +34,27 @@ var team0 = [];
 var team1 = [];
 
 function setup(){
-  //Create players, balls and goals
-  for (let i=0; i<5; i++){
-    players0.push(new Player(round(random(width/2)), round(random(height)), 0));
-  }
-  goal0 = new Goal(0, windowHeight/2);
-  for (let i=0; i<5; i++){
-    players1.push(new Player(round(random(width/2, windowWidth)), round(random(height)), 1));
-  }
-  goal1 = new Goal(1820, windowHeight/2);
-  ball = new Ball(windowWidth/2, windowHeight/2);
-  //Create networks
-  team0.push(new NLayer(22, 22, 22))
-
   windowWidth -= 90;
   windowHeight -= 90;
   createCanvas(windowWidth, windowHeight);
   noStroke();
   rectMode(CENTER);
+  let inputs = [];
+  //Create players, balls and goals
+  for (let i=0; i<2; i++){
+    players0.push(new Player(round(random(width/2)), round(random(height)), 0));
+    players1.push(new Player(round(random(width/2, windowWidth)), round(random(height)), 1));
+    inputs.push(players0[i].x, players0[i].y, players1[i].x, players1[i].y);
+  }
+  goal0 = new Goal(0, windowHeight/2);
+  goal1 = new Goal(windowWidth, windowHeight/2);
+  ball = new Ball(windowWidth/2, windowHeight/2);
+  inputs.push(ball.x, ball.y);
+  //Create networks
+  team0.push(new NLayer(inputs.length, inputs, 0));
+  team0.push(new NLayer(4, team0[0].outputs, 1));
+  team0.push(new NLayer(4, team0[1].outputs, 2));
+  team0.push(new NLayer(players0.length*3, team0[2].outputs, 3));
 }
 
 function draw(){
