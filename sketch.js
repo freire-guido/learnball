@@ -1,11 +1,34 @@
-var players0=[];
-var players1=[];
+class NLayer {
+  constructor(size, inputs, position) {
+    this.inputs = inputs;
+    this.outputs = new Array(size);
+    this.weights = new Array(size);
+    this.biases = new Array(size);
+    this.pos = position;
+    //Initialize random weights and biases
+    for (let o=0; o<this.weights.length; o++){
+      this.weights[o] = new Array(inputs.length);
+      this.biases[o] = Math.random();
+      for (let i=0; i<this.inputs.length; i++){
+        this.weights[o][i] = Math.random();
+      }
+    }
+  }
+  forward(){
+    for (let o=0; o<this.outputs.length; o++){
+      for (let i=0; i<this.inputs.length; i++){
+        this.outputs[o] += this.inputs[i]*this.weights[o][i];
+      }
+      this.outputs[o] += this.biases[o];
+    }
+  }
+}
+var players0 = [];
+var players1 = [];
+var team0 = [];
+var team1 = [];
+
 function setup(){
-  windowWidth -= 90;
-  windowHeight -= 90;
-  createCanvas(windowWidth, windowHeight);
-  noStroke();
-  rectMode(CENTER);
   //Create players, balls and goals
   for (let i=0; i<5; i++){
     players0.push(new Player(round(random(width/2)), round(random(height)), 0));
@@ -16,6 +39,14 @@ function setup(){
   }
   goal1 = new Goal(1820, windowHeight/2);
   ball = new Ball(windowWidth/2, windowHeight/2);
+  //Create networks
+  team0.push(new NLayer(22, 22, 22))
+
+  windowWidth -= 90;
+  windowHeight -= 90;
+  createCanvas(windowWidth, windowHeight);
+  noStroke();
+  rectMode(CENTER);
 }
 
 function draw(){
