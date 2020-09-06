@@ -61,7 +61,7 @@ class NLayer {
     if (dice > 5) {
       for (let o = 0; o < this.weights.length; o++) {
         for (let i = 0; i < this.weights[o].length; i++) {
-          let dice = random(1, 10);
+          let dice = random(10);
           if (dice > 5) {
             this.weights[o][i] = random(-1, 1);
           }
@@ -71,7 +71,7 @@ class NLayer {
   }
 }
 var time = 0;
-var result;
+var result = 0;
 var team0 = [];
 var team1 = [];
 var network0 = [];
@@ -128,6 +128,7 @@ function setup() {
 }
 
 function draw() {
+  console.log(result);
   background(255);
   //Update inputs
   let inputs0 = [];
@@ -138,7 +139,6 @@ function draw() {
   }
   inputs0.push(ball.x, ball.y);
   inputs1.push(ball.x, ball.y);
-  console.log(inputs0);
   //Forward propagation
   network0[0].forward(inputs0);
   network1[0].forward(inputs0);
@@ -169,39 +169,42 @@ function draw() {
   team1[1].up(network3[3].outputs[0]);
   team1[1].side(network3[3].outputs[1]);
   team1[1].kick = (network3[3].outputs[2] > 0.5 ? true : false);
-  logic(team0, team1, ball);
-  //crossOver winning network players
-  switch (result) {
-    case 0:
+  logic(team0.concat(team1), ball);
+  time += 1;
+  //crossOver winning network players after some time
+  if (time > 1200) {
+    if (result < 0) {
       cross = crossOver(network0, network1);
       for (let i = 1; i < network1.length; i++) {
         network2[i].encode = cross[i];
         network3[i].encode = cross[i];
       }
       time = 0;
+      result = 0;
       reset(team0, team1, ball);
-      break;
-    case 1:
+    }
+    else if (result > 0) {
       cross = crossOver(network2, network3);
       for (let i = 1; i < network1.length; i++) {
         network0[i].encode = cross[i];
         network1[i].encode = cross[i];
       }
       time = 0;
+      result = 0;
       reset(team0, team1, ball);
-      break;
-    default:
-      time += 1;
-      break;
-  }
-  if (time > 200) {
-    cross = crossOver(network0, network3);
-    for (let i = 1; i < network1.length; i++) {
-      network1[i].encode = cross[i];
-      network2[i].encode = cross[i];
     }
-    reset(team0, team1, ball);
-    time = 0
+    else {
+      cross = crossOver(network0, network3);
+      for (let i = 1; i < network1.length; i++) {
+        network0[i].encode = network0[i].genome;
+        network1[i].encode = network1[i].genome;
+        network2[i].encode = network2[i].genome;
+        network3[i].encode = network3[i].genome;
+      }
+      time = 0;
+      result = 0;
+      reset(team0, team1, ball);
+    }
   }
   //Render objects
   for (let i = 0; i < team0.length; i++) {
@@ -265,27 +268,29 @@ function Goal(xx, yy) {
   }
 }
 
-function logic(team0, team1, ball) {
-  this.players = team0.concat(team1);
+function logic(players, ball) {
   //Player-ball collision logic
   for (let i = 0; i < players.length; i++) {
     var dx = players[i].x - ball.x;
     var dy = players[i].y - ball.y;
     if (sqrt(sq(dx) + sq(dy)) < ball.r + players[i].r) {
       ball.collision(dx, dy, players[i].kick);
+      if (players[i].t == 0) {
+        result -= 0.2;
+      }
+      else if (players[i].t == 1) {
+        result += 0.2;
+      }
     }
   }
   //Goal detection logic
   if (ball.x < 40 && ball.y < goal0.y + 40 && goal0.y - 40 < ball.y) {
     reset(team0, team1, ball);
-    result = 1;
+    result -= 1;
   }
   else if (ball.x < 40 && ball.y < goal1.y + 40 && goal1.y - 40 < ball.y) {
     reset(team0, team1, ball);
-    result = 0;
-  }
-  else {
-    result = undefined;
+    result += 1;
   }
 }
 
