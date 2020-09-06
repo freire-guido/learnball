@@ -20,13 +20,17 @@ class NLayer {
     }
   }
   forward(){
+    let sum = 0;
     for (let o=0; o<this.outputs.length; o++){
       this.outputs[o] = 0;
       for (let i=0; i<this.inputs.length; i++){
         this.outputs[o] += this.inputs[i]*this.weights[o][i];
-        console.log(this.outputs[o]);
       }
       this.outputs[o] += this.biases[o];
+      sum += this.outputs[o];
+    }
+    for (let o=0; o<this.outputs.length; o++){
+      this.outputs[o] = this.outputs[o]/sum;
     }
   }
 }
@@ -75,11 +79,22 @@ function setup(){
 
 function draw(){
   background(255);
+  //Forward propagation
   for (let i=1; i<network0.length; i++){
     network0[i].forward();
+    network1[i].forward();
+    network2[i].forward();
+    network3[i].forward();
   }
-  team0[0].up(network0[3].outputs[0]);
-  team0[0].side(network0[3].outputs[1]);
+  //Map outputs of last layer to player controls
+  for (let i=0; i<team0.length; i++){
+    team0[i].up(network0[3].outputs[0]);
+    team0[i].side(network0[3].outputs[1]);
+    team0[i].kick = (network0[3].outputs[2] > 0.5 ? true : false);
+    team1[i].up(network0[3].outputs[0]);
+    team1[i].side(network0[3].outputs[1]);
+    team1[i].kick = (network0[3].outputs[2] > 0.5 ? true : false);
+  }
   logic(team0, team1, ball);
   //Render objects
   for (let i=0; i<team0.length; i++){
