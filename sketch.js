@@ -6,7 +6,7 @@ class NLayer {
     this.biases = new Array(size);
     this.pos = position;
     //Initialize random weights and biases
-    if (this.pos != 0) {
+    if (this.pos > 0) {
       for (let o = 0; o < this.weights.length; o++) {
         this.weights[o] = new Array(inputs.length);
         this.biases[o] = Math.random();
@@ -46,11 +46,10 @@ class NLayer {
   //Returns weights and biases as a list
   get genome() {
     let genome = [];
+    console.log(this.biases);
+    genome.push(this.biases);
     for (let o = 0; o < this.outputs.length; o++) {
-      genome.push(this.biases[o]);
-      for (let i = 0; i < this.inputs.length; i++) {
-        genome.push(this.weights[o][i]);
-      }
+      genome.push(this.weights[o]);
     }
     return genome;
   }
@@ -68,6 +67,7 @@ var network0 = [];
 var network1 = [];
 var network2 = [];
 var network3 = [];
+var ball;
 
 function setup() {
   windowWidth -= 30;
@@ -103,12 +103,20 @@ function setup() {
   network3.push(new NLayer(4, network3[0].outputs, 1));
   network3.push(new NLayer(4, network3[1].outputs, 2));
   network3.push(new NLayer(3, network3[2].outputs, 3));
+  //Render objects
+  for (let i = 0; i < team0.length; i++) {
+    team0[i].render();
+    team1[i].render();
+  }
+  ball.render();
+  goal0.render();
+  goal1.render();
 }
 
 function draw() {
   background(255);
   //Forward propagation
-  for (let i = 1; i < network0.length; i++) {
+  for (let i = 0; i < network0.length; i++) {
     network0[i].forward();
     network1[i].forward();
     network2[i].forward();
@@ -144,9 +152,10 @@ function draw() {
       time += 1;
       break;
   }
-  if (time > 120) {
+  if (time > 300) {
     var cross = crossOver(network0, network3);
-    for (let i = 0; i < network1.length; i++) {
+    console.log(cross);
+    for (let i = 1; i < network1.length; i++) {
       network1[i].encode = cross[i];
     }
     reset(team0, team1, ball);
