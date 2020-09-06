@@ -9,9 +9,9 @@ class NLayer {
     if (this.pos > 0) {
       for (let o = 0; o < this.weights.length; o++) {
         this.weights[o] = new Array(inputs.length);
-        this.biases[o] = Math.random();
+        this.biases[o] = random(-1, 1);
         for (let i = 0; i < inputs.length; i++) {
-          this.weights[o][i] = Math.random();
+          this.weights[o][i] = random(-1, 1);
         }
       }
     }
@@ -46,7 +46,6 @@ class NLayer {
   //Returns weights and biases as a list
   get genome() {
     let genome = [];
-    console.log(this.biases);
     genome.push(this.biases);
     for (let o = 0; o < this.outputs.length; o++) {
       genome.push(this.weights[o]);
@@ -55,8 +54,21 @@ class NLayer {
   }
   //Sets all parameters to the ones specified in the genome
   set encode(genome) {
+    let dice = random(10);
     this.weights = Array.from(genome.slice(1));
     this.biases = Array.from(genome[0]);
+    console.log(this.weights);
+    //20% mutation chance
+    if (dice > 5) {
+      for (let o = 0; o < this.weights.length; o++) {
+        for (let i = 0; i < this.weights[o].length; i++) {
+          let dice = random(1, 10);
+          if (dice > 5) {
+            this.weights[o][i] = random(-1, 1);
+          }
+        }
+      }
+    }
   }
 }
 var time = 0;
@@ -139,12 +151,20 @@ function draw() {
   //crossOver winning network players
   switch (result) {
     case 0:
-      crossOver(network0, network1);
+      cross = crossOver(network0, network1);
+      for (let i = 1; i < network1.length; i++) {
+        network2[i].encode = cross[i];
+        network3[i].encode = cross[i];
+      }
       time = 0;
       reset(team0, team1, ball);
       break;
     case 1:
-      crossOver(network2, network3);
+      cross = crossOver(network2, network3);
+      for (let i = 1; i < network1.length; i++) {
+        network0[i].encode = cross[i];
+        network1[i].encode = cross[i];
+      }
       time = 0;
       reset(team0, team1, ball);
       break;
@@ -152,11 +172,11 @@ function draw() {
       time += 1;
       break;
   }
-  if (time > 300) {
-    var cross = crossOver(network0, network3);
-    console.log(cross);
+  if (time > 1200) {
+    cross = crossOver(network0, network3);
     for (let i = 1; i < network1.length; i++) {
       network1[i].encode = cross[i];
+      network2[i].encode = cross[i];
     }
     reset(team0, team1, ball);
     time = 0
