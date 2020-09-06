@@ -26,12 +26,12 @@ class NLayer {
     }
   }
   //Matrix max
-  forward() {
+  forward(inputs) {
     let sum = 0;
     for (let o = 0; o < this.outputs.length; o++) {
       this.outputs[o] = 0;
-      for (let i = 0; i < this.inputs.length; i++) {
-        this.outputs[o] += this.inputs[i] * this.weights[o][i];
+      for (let i = 0; i < inputs.length; i++) {
+        this.outputs[o] += inputs[i] * this.weights[o][i];
       }
       this.outputs[o] += this.biases[o];
       sum += this.outputs[o];
@@ -57,7 +57,6 @@ class NLayer {
     let dice = random(10);
     this.weights = Array.from(genome.slice(1));
     this.biases = Array.from(genome[0]);
-    console.log(this.weights);
     //20% mutation chance
     if (dice > 5) {
       for (let o = 0; o < this.weights.length; o++) {
@@ -87,31 +86,34 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
   rectMode(CENTER);
-  let inputs = [];
+  let inputs0 = [];
+  let inputs1 = [];
   //Create players, balls and goals
   for (let i = 0; i < 2; i++) {
     team0.push(new Player(round(random(width / 2)), round(random(height)), 0));
     team1.push(new Player(round(random(width / 2, windowWidth)), round(random(height)), 1));
-    inputs.push(team0[i].x, team0[i].y, team1[i].x, team1[i].y);
+    inputs0.push(team0[i].x, team0[i].y, team1[i].x, team1[i].y);
+    inputs1.push(team1[i].x, team1[i].y, team0[i].x, team0[i].y);
   }
   goal0 = new Goal(0, windowHeight / 2);
   goal1 = new Goal(windowWidth, windowHeight / 2);
   ball = new Ball(windowWidth / 2, windowHeight / 2);
-  inputs.push(ball.x, ball.y);
+  inputs0.push(ball.x, ball.y);
+  inputs1.push(ball.x, ball.y);
   //Create networks
-  network0.push(new NLayer(inputs.length, inputs, 0));
+  network0.push(new NLayer(inputs0.length, inputs0, 0));
   network0.push(new NLayer(4, network0[0].outputs, 1));
   network0.push(new NLayer(4, network0[1].outputs, 2));
   network0.push(new NLayer(3, network0[2].outputs, 3));
-  network1.push(new NLayer(inputs.length, inputs, 0));
+  network1.push(new NLayer(inputs0.length, inputs0, 0));
   network1.push(new NLayer(4, network1[0].outputs, 1));
   network1.push(new NLayer(4, network1[1].outputs, 2));
   network1.push(new NLayer(3, network1[2].outputs, 3));
-  network2.push(new NLayer(inputs.length, inputs, 0));
+  network2.push(new NLayer(inputs1.length, inputs1, 0));
   network2.push(new NLayer(4, network2[0].outputs, 1));
   network2.push(new NLayer(4, network2[1].outputs, 2));
   network2.push(new NLayer(3, network2[2].outputs, 3));
-  network3.push(new NLayer(inputs.length, inputs, 0));
+  network3.push(new NLayer(inputs1.length, inputs1, 0));
   network3.push(new NLayer(4, network3[0].outputs, 1));
   network3.push(new NLayer(4, network3[1].outputs, 2));
   network3.push(new NLayer(3, network3[2].outputs, 3));
@@ -127,13 +129,33 @@ function setup() {
 
 function draw() {
   background(255);
-  //Forward propagation
-  for (let i = 0; i < network0.length; i++) {
-    network0[i].forward();
-    network1[i].forward();
-    network2[i].forward();
-    network3[i].forward();
+  //Update inputs
+  let inputs0 = [];
+  let inputs1 = [];
+  for (let i = 0; i < 2; i++) {
+    inputs0.push(team0[i].x, team0[i].y, team1[i].x, team1[i].y);
+    inputs1.push(team1[i].x, team1[i].y, team0[i].x, team0[i].y);
   }
+  inputs0.push(ball.x, ball.y);
+  inputs1.push(ball.x, ball.y);
+  console.log(inputs0);
+  //Forward propagation
+  network0[0].forward(inputs0);
+  network1[0].forward(inputs0);
+  network2[0].forward(inputs1);
+  network3[0].forward(inputs1);
+  network0[1].forward(network0[0]);
+  network1[1].forward(network1[0]);
+  network2[1].forward(network2[0]);
+  network3[1].forward(network3[0]);
+  network0[2].forward(network0[1]);
+  network1[2].forward(network1[1]);
+  network2[2].forward(network2[1]);
+  network3[2].forward(network3[1]);
+  network0[3].forward(network0[2]);
+  network1[3].forward(network1[2]);
+  network2[3].forward(network2[2]);
+  network3[3].forward(network3[2]);
   //Map outputs of last layer to player controls
   team0[0].up(network0[3].outputs[0]);
   team0[0].side(network0[3].outputs[1]);
@@ -172,7 +194,7 @@ function draw() {
       time += 1;
       break;
   }
-  if (time > 1200) {
+  if (time > 200) {
     cross = crossOver(network0, network3);
     for (let i = 1; i < network1.length; i++) {
       network1[i].encode = cross[i];
