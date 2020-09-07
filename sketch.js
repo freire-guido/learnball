@@ -59,18 +59,22 @@ class NLayer {
   }
   //Sets all parameters to the ones specified in the genome
   set encode(genome) {
-    let dice = random(10);
     this.weights = Array.from(genome.slice(1));
     this.biases = Array.from(genome[0]);
-    //20% mutation chance
-    if (dice > 5) {
-      for (let o = 0; o < this.weights.length; o++) {
+    for (let o = 0; o < this.weights.length; o++) {
+      //20% mutation chance
+      let dice = random(10);
+      if (dice > 5) {
         for (let i = 0; i < this.weights[o].length; i++) {
           let dice = random(10);
           if (dice > 5) {
+            console.log('mutated');
             this.weights[o][i] = random(-1, 1);
           }
         }
+      }
+      if (dice > 5) {
+        this.biases[o] = random(-1, 1);
       }
     }
   }
@@ -90,9 +94,9 @@ function setup() {
   //Create players, balls and goals
   for (let i = 0; i < networks.length; i++) {
     if (i < networks.length / 2) {
-      players.push(new Player(round(random(windowWidth / 2)), round(random(windowHeight)), 0));
+      players.push(new Player(windowWidth / 3, windowHeight * (i + 1) / 3, 0));
     } else {
-      players.push(new Player(round(random(windowWidth / 2, windowWidth)), round(random(windowHeight)), 1));
+      players.push(new Player(windowWidth * 2 / 3, windowHeight * (i - 1) / 3, 1));
     }
   }
   goal0 = new Goal(0, windowHeight / 2);
@@ -100,9 +104,9 @@ function setup() {
   ball = new Ball(windowWidth / 2, windowHeight / 2);
   let inputs0 = [];
   let inputs1 = [];
-  players.forEach(player => {inputs0.push(player.x, player.y)});
-  players.slice(players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
-  players.slice(0, players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
+  players.forEach(player => { inputs0.push(player.x, player.y) });
+  players.slice(players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
+  players.slice(0, players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
   inputs0.push(ball.x, ball.y);
   inputs1.push(ball.x, ball.y);
   //Create networks
@@ -136,9 +140,9 @@ function draw() {
   //Update inputs
   let inputs0 = [];
   let inputs1 = [];
-  players.forEach(player => {inputs0.push(player.x, player.y)});
-  players.slice(players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
-  players.slice(0, players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
+  players.forEach(player => { inputs0.push(player.x, player.y) });
+  players.slice(players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
+  players.slice(0, players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
   inputs0.push(ball.x, ball.y);
   inputs1.push(ball.x, ball.y);
   //Forward propagation
@@ -159,18 +163,9 @@ function draw() {
   }
   //crossOver best players
   if (result < 0) {
-    let male = players.indexOf(Math.max(players.map(player => player.s)));
-    let female = male;
-    if (female == -1) {
-      female = round(random(players.length - 1));
-      male = round(random(players.length - 1));
-    } else {
-      for (let i = 0; i < players.length; i++) {
-        if (players[i].s >= players[female] & players[i].s < players[male].s) {
-          female = i;
-        }
-      }
-    }
+    let best = findNets(players);
+    let female = best[0];
+    let male = best[1];
     for (let i = networks.length / 2; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
@@ -179,18 +174,9 @@ function draw() {
     }
   }
   else if (result > 0) {
-    let male = players.indexOf(Math.max(players.map(player => player.s)));
-    let female = male;
-    if (female == -1) {
-      female = round(random(players.length - 1));
-      male = round(random(players.length - 1));
-    } else {
-      for (let i = 0; i < players.length; i++) {
-        if (players[i].s >= players[female] & players[i].s < players[male].s) {
-          female = i;
-        }
-      }
-    }
+    let best = findNets(players);
+    let female = best[0];
+    let male = best[1];
     for (let i = 0; i < networks.length / 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
@@ -198,25 +184,17 @@ function draw() {
       }
     }
   }
-  else if (time > 600) {
-    let male = players.indexOf(Math.max(players.map(player => player.s)));
-    let female = male;
-    if (female == -1) {
-      female = round(random(players.length - 1));
-      male = round(random(players.length - 1));
-    } else {
-      for (let i = 0; i < players.length; i++) {
-        if (players[i].s >= players[female] & players[i].s < players[male].s) {
-          female = i;
-        }
-      }
-    }
+  else if (time > 1200) {
+    let best = findNets(players);
+    let female = best[0];
+    let male = best[1];
     console.log(female, male);
     for (let i = 0; i < networks.length; i++) {
-      console.log(networks[i]);
       let cross = crossOver(networks[female], networks[male]);
-      for (let l = 1; l < networks[i].length; l++) {
-        networks[i][l].encode = cross[l];
+      if (i != female & i != male) {
+        for (let l = 1; l < networks[i].length; l++) {
+          networks[i][l].encode = cross[l];
+        }
       }
     }
     reset(players, ball);
@@ -310,15 +288,40 @@ function logic(players, ball) {
 function reset(players, ball) {
   for (let i = 0; i < players.length; i++) {
     if (i < players.length / 2) {
-      players[i].x = round(random(windowWidth / 2));
-      players[i].y = round(random(windowHeight));
+      players[i].x = windowWidth / 3;
+      players[i].y = windowHeight * i / 3;
+      players[i].s = 0;
     } else {
-      players[i].x = round(random(windowWidth / 2, windowWidth));
-      players[i].y = round(random(windowHeight));
+      players[i].x = windowWidth * 2 / 3;
+      players[i].y = windowHeight * (i - 2) / 3;
+      players[i].s = 0;
     }
   }
   ball.x = windowWidth / 2;
   ball.y = windowHeight / 2;
+}
+
+//Returns best and second best network INDEXES as a lsit
+function findNets(players) {
+  this.sMax = max(players.map(player => player.s));
+  this.sMin = min(players.map(player => player.s));
+  console.log(players.map(player => player.s));
+  if (sMax == 0) {
+    this.female = round(random(players.length - 1));
+    this.male = round(random(players.length - 1));
+  } else {
+    this.male = players.map(player => player.s).indexOf(sMax);
+    this.female = players.map(player => player.s).indexOf(sMin);
+    for (let i = 0; i < players.length; i++) {
+      if (players[i].s >= players[female].s & players[i].s < players[male].s) {
+        this.female = i;
+      }
+    }
+    if (players[female].s == sMin) {
+      female = male;
+    }
+  }
+  return [this.female, this.male];
 }
 
 //Merges a female and male network at a random cutoff, and returns the child network
