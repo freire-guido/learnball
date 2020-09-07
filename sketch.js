@@ -59,7 +59,6 @@ class NLayer {
   }
   //Sets all parameters to the ones specified in the genome
   set encode(genome) {
-    console.log('hi');
     let dice = random(10);
     this.weights = Array.from(genome.slice(1));
     this.biases = Array.from(genome[0]);
@@ -69,7 +68,6 @@ class NLayer {
         for (let i = 0; i < this.weights[o].length; i++) {
           let dice = random(10);
           if (dice > 5) {
-            console.log('mutation');
             this.weights[o][i] = random(-1, 1);
           }
         }
@@ -100,10 +98,11 @@ function setup() {
   goal0 = new Goal(0, windowHeight / 2);
   goal1 = new Goal(windowWidth, windowHeight / 2);
   ball = new Ball(windowWidth / 2, windowHeight / 2);
-  let inputs0 = players.slice(0, players.length / 2).map(player => (player.x, player.y));
-  inputs0.push(...players.slice(players.length / 2).map(player => (player.x, player.y)));
-  let inputs1 = players.slice(players.length / 2).map(player => (player.x, player.y));
-  inputs1.push(...players.slice(0, players.length / 2).map(player => (player.x, player.y)))
+  let inputs0 = [];
+  let inputs1 = [];
+  players.forEach(player => {inputs0.push(player.x, player.y)});
+  players.slice(players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
+  players.slice(0, players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
   inputs0.push(ball.x, ball.y);
   inputs1.push(ball.x, ball.y);
   //Create networks
@@ -132,21 +131,24 @@ function setup() {
 
 function draw() {
   background(255);
+  logic(players, ball);
+  time += 1;
   //Update inputs
-  let inputs0 = players.slice(0, players.length / 2).map(player => (player.x, player.y));
-  inputs0.push(...players.slice(players.length / 2).map(player => (player.x, player.y)));
-  let inputs1 = players.slice(players.length / 2).map(player => (player.x, player.y));
-  inputs1.push(...players.slice(0, players.length / 2).map(player => (player.x, player.y)))
+  let inputs0 = [];
+  let inputs1 = [];
+  players.forEach(player => {inputs0.push(player.x, player.y)});
+  players.slice(players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
+  players.slice(0, players.length/2).forEach(player => {inputs1.push(player.x, player.y)});
   inputs0.push(ball.x, ball.y);
   inputs1.push(ball.x, ball.y);
   //Forward propagation
   networks[0][0].forward(inputs0);
   networks[1][0].forward(inputs0);
-  networks[2][0].forward(inputs1)
-  networks[3][0].forward(inputs1)
+  networks[2][0].forward(inputs1);
+  networks[3][0].forward(inputs1);
   for (let i = 0; i < networks.length; i++) {
     for (let l = 1; l < networks[i].length; l++) {
-      networks[i][l].forward(networks[i][l-1].outputs);
+      networks[i][l].forward(networks[i][l - 1].outputs);
     }
   }
   //Map outputs of last layer to player controls
@@ -155,8 +157,6 @@ function draw() {
     players[i].side(networks[i][3].outputs[1]);
     players[i].kick = (networks[i][3].outputs[2] > 0.5 ? true : false);
   }
-  logic(players, ball);
-  time += 1;
   //crossOver best players
   if (result < 0) {
     let male = players.indexOf(Math.max(players.map(player => player.s)));
@@ -172,7 +172,10 @@ function draw() {
       }
     }
     for (let i = networks.length / 2; i < networks.length; i++) {
-      networks[i].encode = crossOver(networks[female], networks[male]);
+      let cross = crossOver(networks[female], networks[male]);
+      for (let l = 1; l < networks[i].length; l++) {
+        networks[i][l].encode = cross[l];
+      }
     }
   }
   else if (result > 0) {
@@ -189,10 +192,13 @@ function draw() {
       }
     }
     for (let i = 0; i < networks.length / 2; i++) {
-      networks[i].encode = crossOver(networks[female], networks[male]);
+      let cross = crossOver(networks[female], networks[male]);
+      for (let l = 1; l < networks[i].length; l++) {
+        networks[i][l].encode = cross[l];
+      }
     }
   }
-  else if (time > 100) {
+  else if (time > 600) {
     let male = players.indexOf(Math.max(players.map(player => player.s)));
     let female = male;
     if (female == -1) {
@@ -206,9 +212,12 @@ function draw() {
       }
     }
     console.log(female, male);
-    for (let i = 0; i < networks.length / 2; i++) {
-      console.log(i + " encoding");
-      networks[i].encode = crossOver(networks[female], networks[male]);
+    for (let i = 0; i < networks.length; i++) {
+      console.log(networks[i]);
+      let cross = crossOver(networks[female], networks[male]);
+      for (let l = 1; l < networks[i].length; l++) {
+        networks[i][l].encode = cross[l];
+      }
     }
     reset(players, ball);
     time = 0;
