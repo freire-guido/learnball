@@ -1,5 +1,6 @@
 class NLayer {
   constructor(size, inputs, position) {
+    this.test = 0;
     this.inputs = inputs;
     this.outputs = new Array(size);
     this.weights = new Array(size);
@@ -8,18 +9,18 @@ class NLayer {
     //Initialize random weights and biases
     if (this.pos != 0) {
       for (let o = 0; o < this.weights.length; o++) {
-        this.weights[o] = new Array(inputs.length);
+        this.weights[o] = new Array(this.inputs.length);
         this.biases[o] = random(-1, 1);
-        for (let i = 0; i < inputs.length; i++) {
+        for (let i = 0; i < this.inputs.length; i++) {
           this.weights[o][i] = random(-1, 1);
         }
       }
     }
     else {
       for (let o = 0; o < this.weights.length; o++) {
-        this.weights[o] = new Array(inputs.length);
+        this.weights[o] = new Array(this.inputs.length);
         this.biases[o] = 0;
-        for (let i = 0; i < inputs.length; i++) {
+        for (let i = 0; i < this.inputs.length; i++) {
           this.weights[o][i] = 1;
         }
       }
@@ -27,17 +28,20 @@ class NLayer {
   }
   //Matrix max
   forward(inputs, team) {
+    this.inputs = inputs;
     if (this.pos > 0) {
       for (let o = 0; o < this.outputs.length; o++) {
         this.outputs[o] = 0;
-        for (let i = 0; i < inputs.length; i++) {
-          this.outputs[o] += inputs[i] * this.weights[o][i];
+        for (let i = 0; i < this.inputs.length; i++) {
+          this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        if (team != 0 || o != 1) {
-          this.outputs[o] = -sigmoid(this.outputs[o]);
-        } else {
-          this.outputs[o] = sigmoid(this.outputs[o]);
+        if (this.pos == 3) {
+          if (team != 0 || o != 1) {
+            this.outputs[o] = sigmoid(this.outputs[o]);
+          } else {
+            this.outputs[o] = -sigmoid(this.outputs[o]);
+          }
         }
       }
       //Sigmoid activation function
@@ -47,8 +51,28 @@ class NLayer {
     }
     else {
       for (let i = 0; i < this.outputs.length; i++) {
-        this.outputs[i] = inputs[i];
+        this.outputs[i] = this.inputs[i];
       }
+    }
+  }
+  render(x, y, h) {
+    this.x = x;
+    this.y = y;
+    this.r = 8;
+    for (let o = 0; o < this.outputs.length; o++) {
+      let oY = h * o / (this.outputs.length - 1) + this.y;
+      if (this.pos != 0) {
+        for (let i = 0; i < this.weights[o].length; i++) {
+          let iY = h * i / (this.weights[o].length - 1) + this.y;
+          strokeWeight(abs(this.weights[o][i]));
+          stroke(126)
+          line(this.x - 30, iY, this.x, oY);
+          strokeWeight(0);
+        }
+      }
+      strokeWeight(abs(this.outputs[o] / 1000));
+      ellipse(this.x, oY, this.r);
+      strokeWeight(0);
     }
   }
   //Returns weights and biases as a list
@@ -111,18 +135,18 @@ function setup() {
   players.slice(0, players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
   inputs0.push(ball.x, ball.y);
   inputs1.push(ball.x, ball.y);
-  //Create networks
+  //Shape networks
   for (let i = 0; i < networks.length; i++) {
     networks[i] = [];
-    if (i < 2 / 2) {
+    if (i < networks.length / 2) {
       networks[i].push(new NLayer(inputs0.length, inputs0, 0));
-      networks[i].push(new NLayer(4, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(4, networks[i][1].outputs, 2));
+      networks[i].push(new NLayer(8, networks[i][0].outputs, 1));
+      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
       networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
     } else {
-      networks[i].push(new NLayer(inputs1.length, inputs0, 0));
-      networks[i].push(new NLayer(4, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(4, networks[i][1].outputs, 2));
+      networks[i].push(new NLayer(inputs1.length, inputs1, 0));
+      networks[i].push(new NLayer(8, networks[i][0].outputs, 1));
+      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
       networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
     }
   }
@@ -166,6 +190,10 @@ function draw() {
     players[i].up(networks[i][3].outputs[0]);
     players[i].side(networks[i][3].outputs[1]);
     players[i].kick = (networks[i][3].outputs[2] > 0.5 ? true : false);
+    //Renders networks
+    for (let l = networks.length -1; l>= 0; l--){
+      networks[i][l].render((l+1)*30, i*80+10, 60);
+    }
   }
   //crossOver best players
   if (result < 0) {
@@ -190,11 +218,10 @@ function draw() {
       }
     }
   }
-  else if (time > 1200) {
+  else if (time > 300) {
     let best = findNets(players);
     let female = best[0];
     let male = best[1];
-    console.log(female, male);
     for (let i = 0; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
       if (i != female & i != male) {
@@ -274,9 +301,14 @@ function logic(players, ball) {
   for (let i = 0; i < players.length; i++) {
     var dx = players[i].x - ball.x;
     var dy = players[i].y - ball.y;
+    //Reward touching the ball
     if (sqrt(sq(dx) + sq(dy)) < ball.r + players[i].r) {
       ball.collision(dx, dy, players[i].kick);
-      players[i].s += 0.2;
+      players[i].s += 1;
+    }
+    //Penalize going outside the field
+    if (players[i].x > windowWidth | players[i].x < 0 | players[i].y > windowHeight | players[i].y < 0){
+      players[i].s -= 1;
     }
   }
   //Goal detection logic
@@ -295,11 +327,11 @@ function reset(players, ball) {
   for (let i = 0; i < players.length; i++) {
     if (i < players.length / 2) {
       players[i].x = windowWidth / 3;
-      players[i].y = windowHeight * i / 3;
+      players[i].y = windowHeight * (i + 1) / 3;
       players[i].s = 0;
     } else {
       players[i].x = windowWidth * 2 / 3;
-      players[i].y = windowHeight * (i - 2) / 3;
+      players[i].y = windowHeight * (i - 1) / 3;
       players[i].s = 0;
     }
   }
