@@ -28,25 +28,21 @@ class NLayer {
   //Matrix max
   forward(inputs, team) {
     if (this.pos > 0) {
-      let sum = 0;
       for (let o = 0; o < this.outputs.length; o++) {
         this.outputs[o] = 0;
         for (let i = 0; i < inputs.length; i++) {
           this.outputs[o] += inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        sum += this.outputs[o];
-      }
-      //Map last layer to value between 0 and 1
-      if (this.pos == 3) {
-        for (let o = 0; o < this.outputs.length; o++) {
-          if (team == 0) {
-            this.outputs[o] = this.outputs[o] / sum;
-
-          } else {
-            this.outputs[o] = -this.outputs[o] / sum;
-          }
+        if (team != 0 || o != 1) {
+          this.outputs[o] = -sigmoid(this.outputs[o]);
+        } else {
+          this.outputs[o] = sigmoid(this.outputs[o]);
         }
+      }
+      //Sigmoid activation function
+      function sigmoid(z) {
+        return 1 / (1 + Math.exp(-z));
       }
     }
     else {
@@ -164,9 +160,7 @@ function draw() {
         networks[i][l].forward(networks[i][l - 1].outputs, 1);
       }
     }
-    console.log(networks[i]);
   }
-  console.log('-');
   //Map outputs of last layer to player controls
   for (let i = 0; i < networks.length; i++) {
     players[i].up(networks[i][3].outputs[0]);
@@ -196,14 +190,13 @@ function draw() {
       }
     }
   }
-  else if (time > 600) {
+  else if (time > 1200) {
     let best = findNets(players);
     let female = best[0];
     let male = best[1];
     console.log(female, male);
     for (let i = 0; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
-      console.log(networks[i]);
       if (i != female & i != male) {
         for (let l = 1; l < networks[i].length; l++) {
           networks[i][l].encode = cross[l];
