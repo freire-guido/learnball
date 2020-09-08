@@ -27,32 +27,31 @@ class NLayer {
   }
   //Matrix max
   forward(inputs, team) {
-    let sum = 0;
-    if (this.pos != 0) {
+    if (this.pos > 0) {
+      let sum = 0;
       for (let o = 0; o < this.outputs.length; o++) {
         this.outputs[o] = 0;
         for (let i = 0; i < inputs.length; i++) {
+          this.outputs[o] += inputs[i] * this.weights[o][i];
+        }
+        this.outputs[o] += this.biases[o];
+        sum += this.outputs[o];
+      }
+      //Map last layer to value between 0 and 1
+      if (this.pos == 3) {
+        for (let o = 0; o < this.outputs.length; o++) {
           if (team == 0) {
-            this.outputs[o] += inputs[i] * this.weights[o][i];
+            this.outputs[o] = this.outputs[o] / sum;
+
           } else {
-            this.outputs[o] += inputs[i] * -this.weights[o][i];
+            this.outputs[o] = -this.outputs[o] / sum;
           }
         }
-        if (team == 0) {
-          this.outputs[o] += this.biases[o];
-        } else {
-          this.outputs[o] += -this.biases[o]
-        }
-        sum += this.outputs[o];
       }
     }
     else {
-      this.outputs = inputs;
-    }
-    //Map last layer to value between 0 and 1
-    if (this.pos == 3) {
-      for (let o = 0; o < this.outputs.length; o++) {
-        this.outputs[o] = this.outputs[o] / sum;
+      for (let i = 0; i < this.outputs.length; i++) {
+        this.outputs[i] = inputs[i];
       }
     }
   }
@@ -165,7 +164,9 @@ function draw() {
         networks[i][l].forward(networks[i][l - 1].outputs, 1);
       }
     }
+    console.log(networks[i]);
   }
+  console.log('-');
   //Map outputs of last layer to player controls
   for (let i = 0; i < networks.length; i++) {
     players[i].up(networks[i][3].outputs[0]);
