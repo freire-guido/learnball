@@ -36,13 +36,12 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        this.outputs[o] = 10 * sigmoid(this.outputs[o]);
         //Output multiplier for time manipulation
         if (this.pos == 3) {
-          if (team != 0 || o != 1) {
-            this.outputs[o] = -this.outputs[o];
+          if (team != 1 || o != 1) {
+            this.outputs[o] = 10 * sigmoid(this.outputs[o]);
           } else {
-            this.outputs[o] = this.outputs[o];
+            this.outputs[o] = -10 * sigmoid(this.outputs[o]);
           }
         }
       }
@@ -72,9 +71,10 @@ class NLayer {
     this.biases = Array.from(genome[0]);
     for (let o = 0; o < this.weights.length; o++) {
       //20% mutation chance
-      let dice = random(10)
-      if (dice < 2.5) {
+      let dice = random(100);
+      if (dice < 5) {
         for (let i = 0; i < this.weights[o].length; i++) {
+          console.log('mutation');
           this.weights[o][i] = random(-1, 1);
         }
         this.biases[o] = random(-1, 1);
@@ -105,7 +105,7 @@ class NLayer {
 var time = 0;
 var result = 0;
 var players = [];
-var networks = new Array(8);
+var networks = new Array(10);
 var ball;
 
 function setup() {
@@ -189,6 +189,9 @@ function draw() {
         networks[i][l].encode = cross[l];
       }
     }
+    reset(players, ball);
+    time = 0;
+    result = 0;
   }
   else if (result > 0) {
     let scores = players.map(player => player.s);
@@ -200,8 +203,11 @@ function draw() {
         networks[i][l].encode = cross[l];
       }
     }
+    reset(players, ball);
+    time = 0;
+    result = 0;
   }
-  else if (time > 120) {
+  else if (time > 240) {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
@@ -230,7 +236,7 @@ function draw() {
 
 function Player(xx, yy, tt) {
   this.t = tt;
-  this.r = 40;
+  this.r = 25;
   this.x = xx;
   this.y = yy;
   this.s = 0;
@@ -256,7 +262,7 @@ function Player(xx, yy, tt) {
     let dist = [];
     if (this.t == 0) {
       players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
-      inputs.push(players[dist.indexOf([...dist].sort()[0]) + 4].x - this.x, players[dist.indexOf([...dist].sort()[0]) + 4].y - this.y);
+      inputs.push(players[dist.indexOf([...dist].sort()[0]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[0]) + players.length / 2].y - this.y);
       dist = [];
       players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
       inputs.push(players[dist.indexOf([...dist].sort()[1])].x - this.x, players[dist.indexOf([...dist].sort()[1])].y - this.y);
@@ -265,7 +271,7 @@ function Player(xx, yy, tt) {
       inputs.push(players[dist.indexOf([...dist].sort()[0])].x - this.x, players[dist.indexOf([...dist].sort()[0])].y - this.y);
       dist = [];
       players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
-      inputs.push(players[dist.indexOf([...dist].sort()[1]) + 4].x - this.x, players[dist.indexOf([...dist].sort()[1]) + 4].y - this.y);
+      inputs.push(players[dist.indexOf([...dist].sort()[1]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[1]) + players.length / 2].y - this.y);
     }
     inputs.push(ball.x - this.x, ball.y - this.y);
     inputs.push(goal.x - this.x, goal.y - this.y);
