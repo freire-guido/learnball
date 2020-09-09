@@ -180,9 +180,9 @@ function draw() {
   }
   //crossOver best players
   if (result < 0) {
-    let best = findNets(players);
-    let female = best[0];
-    let male = best[1];
+    let scores = players.map(player => player.s);
+    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
+    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = networks.length / 2; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
@@ -191,9 +191,9 @@ function draw() {
     }
   }
   else if (result > 0) {
-    let best = findNets(players);
-    let female = best[0];
-    let male = best[1];
+    let scores = players.map(player => player.s);
+    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
+    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = 0; i < networks.length / 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
@@ -342,29 +342,6 @@ function reset(players, ball) {
   }
   ball.x = windowWidth / 2;
   ball.y = windowHeight / 2;
-}
-
-//Returns best and second best network INDEXES as a list
-function findNets(players) {
-  this.sMax = max(players.map(player => player.s));
-  this.sMin = min(players.map(player => player.s));
-  console.log(players.map(player => player.s));
-  if (sMax == sMin) {
-    this.female = round(random(players.length - 1));
-    this.male = round(random(players.length - 1));
-  } else {
-    this.male = players.map(player => player.s).indexOf(sMax);
-    this.female = players.map(player => player.s).indexOf(sMin);
-    for (let i = 0; i < players.length; i++) {
-      if (players[i].s >= players[female].s & players[i].s < players[male].s) {
-        this.female = i;
-      }
-    }
-    if (players[female].s == sMin) {
-      female = male;
-    }
-  }
-  return [this.female, this.male];
 }
 
 //Merges a female and male network at a random cutoff, and returns the child network
