@@ -36,7 +36,8 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        this.outputs[o] = sigmoid(this.outputs[o]);
+        this.outputs[o] = 10 * sigmoid(this.outputs[o]);
+        //Output multiplier for time manipulation
         if (this.pos == 3) {
           if (team != 0 || o != 1) {
             this.outputs[o] = -this.outputs[o];
@@ -54,26 +55,6 @@ class NLayer {
     //Sigmoid activation function
     function sigmoid(z) {
       return 1 / (1 + Math.exp(-z));
-    }
-  }
-  render(x, y, h) {
-    this.x = x;
-    this.y = y;
-    this.r = 8;
-    for (let o = 0; o < this.outputs.length; o++) {
-      let oY = h * o / (this.outputs.length - 1) + this.y;
-      if (this.pos != 0) {
-        for (let i = 0; i < this.weights[o].length; i++) {
-          let iY = h * i / (this.weights[o].length - 1) + this.y;
-          strokeWeight(abs(this.weights[o][i]));
-          stroke(126)
-          line(this.x - 30, iY, this.x, oY);
-          strokeWeight(0);
-        }
-      }
-      strokeWeight(abs(this.outputs[o] / 500));
-      ellipse(this.x, oY, this.r);
-      strokeWeight(0);
     }
   }
   //Returns weights and biases as a list
@@ -100,11 +81,31 @@ class NLayer {
       }
     }
   }
+  render(x, y, h) {
+    this.x = x;
+    this.y = y;
+    this.r = 8;
+    for (let o = 0; o < this.outputs.length; o++) {
+      let oY = h * o / (this.outputs.length - 1) + this.y;
+      if (this.pos != 0) {
+        for (let i = 0; i < this.weights[o].length; i++) {
+          let iY = h * i / (this.weights[o].length - 1) + this.y;
+          strokeWeight(abs(this.weights[o][i]));
+          stroke(126)
+          line(this.x - 30, iY, this.x, oY);
+          strokeWeight(0);
+        }
+      }
+      strokeWeight(abs(this.outputs[o] / 500));
+      ellipse(this.x, oY, this.r);
+      strokeWeight(0);
+    }
+  }
 }
 var time = 0;
 var result = 0;
 var players = [];
-var networks = new Array(4);
+var networks = new Array(8);
 var ball;
 
 function setup() {
@@ -116,33 +117,26 @@ function setup() {
   //Create players, balls and goals
   for (let i = 0; i < networks.length; i++) {
     if (i < networks.length / 2) {
-      players.push(new Player(windowWidth / 3, windowHeight * (i + 1) / 3, 0));
+      players.push(new Player(windowWidth / 3, windowHeight / (networks.length / 2 + 1) * (i + 1), 0));
     } else {
-      players.push(new Player(windowWidth * 2 / 3, windowHeight * (i - 1) / 3, 1));
+      players.push(new Player(windowWidth * 2 / 3, windowHeight / (networks.length / 2 + 1) * (i - (networks.length / 2 - 1)), 1));
     }
   }
   goal0 = new Goal(0, windowHeight / 2);
   goal1 = new Goal(windowWidth, windowHeight / 2);
   ball = new Ball(windowWidth / 2, windowHeight / 2);
-  let inputs0 = [];
-  let inputs1 = [];
-  players.forEach(player => { inputs0.push(player.x, player.y) });
-  players.slice(players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
-  players.slice(0, players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
-  inputs0.push(ball.x, ball.y);
-  inputs1.push(ball.x, ball.y);
   //Shape networks
   for (let i = 0; i < networks.length; i++) {
     networks[i] = [];
     if (i < networks.length / 2) {
-      networks[i].push(new NLayer(inputs0.length, inputs0, 0));
-      networks[i].push(new NLayer(10, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(8, networks[i][1].outputs, 2));
+      networks[i].push(new NLayer(players[i].inputs(players, ball, goal1).length, players[i].inputs(players, ball, goal1), 0));
+      networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
+      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
       networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
     } else {
-      networks[i].push(new NLayer(inputs1.length, inputs1, 0));
-      networks[i].push(new NLayer(10, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(8, networks[i][1].outputs, 2));
+      networks[i].push(new NLayer(players[i].inputs(players, ball, goal0).length, players[i].inputs(players, ball, goal1), 0));
+      networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
+      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
       networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
     }
   }
@@ -159,20 +153,13 @@ function draw() {
   background(255);
   logic(players, ball);
   time += 1;
-  //Update inputs
-  let inputs0 = [];
-  let inputs1 = [];
-  players.forEach(player => { inputs0.push(player.x, player.y) });
-  players.slice(players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
-  players.slice(0, players.length / 2).forEach(player => { inputs1.push(player.x, player.y) });
-  inputs0.push(ball.x, ball.y);
-  inputs1.push(ball.x, ball.y);
   //Forward propagation
-  networks[0][0].forward(inputs0, 0);
-  networks[1][0].forward(inputs0, 0);
-  networks[2][0].forward(inputs1, 1);
-  networks[3][0].forward(inputs1, 1);
   for (let i = 0; i < networks.length; i++) {
+    if (i < networks.length / 2) {
+      networks[i][0].forward(players[i].inputs(players, ball, goal1));
+    } else {
+      networks[i][0].forward(players[i].inputs(players, ball, goal0));
+    }
     for (let l = 1; l < networks[i].length; l++) {
       if (i < networks.length / 2) {
         networks[i][l].forward(networks[i][l - 1].outputs, 0);
@@ -187,8 +174,8 @@ function draw() {
     players[i].side(networks[i][3].outputs[1]);
     players[i].kick = (networks[i][3].outputs[2] > 0 ? true : false);
     //Renders networks
-    for (let l = networks.length - 1; l >= 0; l--) {
-      networks[i][l].render((l + 1) * 30, i * 80 + 10, 60);
+    for (let l = networks[i].length - 1; l >= 0; l--) {
+      networks[i][l].render((l + 1) * 30 + i * 200, 10, 60);
     }
   }
   //crossOver best players
@@ -214,10 +201,11 @@ function draw() {
       }
     }
   }
-  else if (time > 1200) {
-    let best = findNets(players);
-    let female = best[0];
-    let male = best[1];
+  else if (time > 120) {
+    let scores = players.map(player => player.s);
+    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
+    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
+    console.log(scores);
     console.log(female, male);
     for (let i = 0; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
@@ -242,7 +230,7 @@ function draw() {
 
 function Player(xx, yy, tt) {
   this.t = tt;
-  this.r = 20;
+  this.r = 40;
   this.x = xx;
   this.y = yy;
   this.s = 0;
@@ -262,6 +250,26 @@ function Player(xx, yy, tt) {
       fill(255, 0, 0)
     }
     ellipse(this.x, this.y, this.r * 2);
+  }
+  this.inputs = (players, ball, goal) => {
+    let inputs = [];
+    let dist = [];
+    if (this.t == 0) {
+      players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
+      inputs.push(players[dist.indexOf([...dist].sort()[0]) + 4].x - this.x, players[dist.indexOf([...dist].sort()[0]) + 4].y - this.y);
+      dist = [];
+      players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
+      inputs.push(players[dist.indexOf([...dist].sort()[1])].x - this.x, players[dist.indexOf([...dist].sort()[1])].y - this.y);
+    } else {
+      players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
+      inputs.push(players[dist.indexOf([...dist].sort()[0])].x - this.x, players[dist.indexOf([...dist].sort()[0])].y - this.y);
+      dist = [];
+      players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
+      inputs.push(players[dist.indexOf([...dist].sort()[1]) + 4].x - this.x, players[dist.indexOf([...dist].sort()[1]) + 4].y - this.y);
+    }
+    inputs.push(ball.x - this.x, ball.y - this.y);
+    inputs.push(goal.x - this.x, goal.y - this.y);
+    return inputs
   }
 }
 
@@ -324,11 +332,11 @@ function reset(players, ball) {
   for (let i = 0; i < players.length; i++) {
     if (i < players.length / 2) {
       players[i].x = windowWidth / 3;
-      players[i].y = windowHeight * (i + 1) / 3;
+      players[i].y = windowHeight / (networks.length / 2 + 1) * (i + 1);
       players[i].s = 0;
     } else {
       players[i].x = windowWidth * 2 / 3;
-      players[i].y = windowHeight * (i - 1) / 3;
+      players[i].y = windowHeight / (networks.length / 2 + 1) * (i - (networks.length / 2 - 1));
       players[i].s = 0;
     }
   }
