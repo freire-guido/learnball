@@ -36,23 +36,24 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
+        this.outputs[o] = sigmoid(this.outputs[o]);
         if (this.pos == 3) {
           if (team != 0 || o != 1) {
-            this.outputs[o] = sigmoid(this.outputs[o]);
+            this.outputs[o] = -this.outputs[o];
           } else {
-            this.outputs[o] = -sigmoid(this.outputs[o]);
+            this.outputs[o] = this.outputs[o];
           }
         }
-      }
-      //Sigmoid activation function
-      function sigmoid(z) {
-        return 1 / (1 + Math.exp(-z));
       }
     }
     else {
       for (let i = 0; i < this.outputs.length; i++) {
         this.outputs[i] = this.inputs[i];
       }
+    }
+    //Sigmoid activation function
+    function sigmoid(z) {
+      return 1 / (1 + Math.exp(-z));
     }
   }
   render(x, y, h) {
@@ -70,7 +71,7 @@ class NLayer {
           strokeWeight(0);
         }
       }
-      strokeWeight(abs(this.outputs[o] / 1000));
+      strokeWeight(abs(this.outputs[o] / 500));
       ellipse(this.x, oY, this.r);
       strokeWeight(0);
     }
@@ -90,16 +91,11 @@ class NLayer {
     this.biases = Array.from(genome[0]);
     for (let o = 0; o < this.weights.length; o++) {
       //20% mutation chance
-      let dice = random(10);
-      if (dice > 5) {
+      let dice = random(10)
+      if (dice < 2.5) {
         for (let i = 0; i < this.weights[o].length; i++) {
-          let dice = random(10);
-          if (dice > 5) {
-            this.weights[o][i] = random(-1, 1);
-          }
+          this.weights[o][i] = random(-1, 1);
         }
-      }
-      if (dice > 5) {
         this.biases[o] = random(-1, 1);
       }
     }
@@ -140,13 +136,13 @@ function setup() {
     networks[i] = [];
     if (i < networks.length / 2) {
       networks[i].push(new NLayer(inputs0.length, inputs0, 0));
-      networks[i].push(new NLayer(8, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
+      networks[i].push(new NLayer(10, networks[i][0].outputs, 1));
+      networks[i].push(new NLayer(8, networks[i][1].outputs, 2));
       networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
     } else {
       networks[i].push(new NLayer(inputs1.length, inputs1, 0));
-      networks[i].push(new NLayer(8, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
+      networks[i].push(new NLayer(10, networks[i][0].outputs, 1));
+      networks[i].push(new NLayer(8, networks[i][1].outputs, 2));
       networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
     }
   }
@@ -189,10 +185,10 @@ function draw() {
   for (let i = 0; i < networks.length; i++) {
     players[i].up(networks[i][3].outputs[0]);
     players[i].side(networks[i][3].outputs[1]);
-    players[i].kick = (networks[i][3].outputs[2] > 0.5 ? true : false);
+    players[i].kick = (networks[i][3].outputs[2] > 0 ? true : false);
     //Renders networks
-    for (let l = networks.length -1; l>= 0; l--){
-      networks[i][l].render((l+1)*30, i*80+10, 60);
+    for (let l = networks.length - 1; l >= 0; l--) {
+      networks[i][l].render((l + 1) * 30, i * 80 + 10, 60);
     }
   }
   //crossOver best players
@@ -218,10 +214,11 @@ function draw() {
       }
     }
   }
-  else if (time > 300) {
+  else if (time > 1200) {
     let best = findNets(players);
     let female = best[0];
     let male = best[1];
+    console.log(female, male);
     for (let i = 0; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
       if (i != female & i != male) {
@@ -307,8 +304,8 @@ function logic(players, ball) {
       players[i].s += 1;
     }
     //Penalize going outside the field
-    if (players[i].x > windowWidth | players[i].x < 0 | players[i].y > windowHeight | players[i].y < 0){
-      players[i].s -= 1;
+    if (players[i].x > windowWidth | players[i].x < 0 | players[i].y > windowHeight | players[i].y < 0) {
+      players[i].s -= 0.1;
     }
   }
   //Goal detection logic
@@ -344,7 +341,7 @@ function findNets(players) {
   this.sMax = max(players.map(player => player.s));
   this.sMin = min(players.map(player => player.s));
   console.log(players.map(player => player.s));
-  if (sMax == 0) {
+  if (sMax == sMin) {
     this.female = round(random(players.length - 1));
     this.male = round(random(players.length - 1));
   } else {
