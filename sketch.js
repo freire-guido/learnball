@@ -36,7 +36,7 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        this.outputs[o] = 20 * activate(this.outputs[o]);
+        this.outputs[o] =  10*activate(this.outputs[o]);
       }
     }
     else {
