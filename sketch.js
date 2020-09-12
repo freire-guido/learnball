@@ -36,14 +36,7 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        //Output multiplier for time manipulation
-        if (this.pos == 3) {
-          if (team != 1 || o != 1) {
-            this.outputs[o] = 10 * sigmoid(this.outputs[o]);
-          } else {
-            this.outputs[o] = -10 * sigmoid(this.outputs[o]);
-          }
-        }
+        this.outputs[o] = 10*activate(this.outputs[o]);
       }
     }
     else {
@@ -51,9 +44,9 @@ class NLayer {
         this.outputs[i] = this.inputs[i];
       }
     }
-    //Sigmoid activation function
-    function sigmoid(z) {
-      return 1 / (1 + Math.exp(-z));
+    //tanh activation function
+    function activate(z) {
+      return Math.tanh(z);
     }
   }
   //Returns weights and biases as a list
@@ -95,6 +88,8 @@ class NLayer {
           line(this.x - 30, iY, this.x, oY);
           strokeWeight(0);
         }
+      } if (this.pos == 4) {
+        text(round(this.outputs[o]), this.x, oY);
       }
       strokeWeight(abs(this.outputs[o] / 500));
       ellipse(this.x, oY, this.r);
@@ -105,7 +100,7 @@ class NLayer {
 var time = 0;
 var result = 0;
 var players = [];
-var networks = new Array(10);
+var networks = new Array(4);
 var ball;
 
 function setup() {
@@ -132,12 +127,14 @@ function setup() {
       networks[i].push(new NLayer(players[i].inputs(players, ball, goal1).length, players[i].inputs(players, ball, goal1), 0));
       networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
       networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
-      networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
+      networks[i].push(new NLayer(4, networks[i][2].outputs, 3));
+      networks[i].push(new NLayer(3, networks[i][3].outputs, 4));
     } else {
-      networks[i].push(new NLayer(players[i].inputs(players, ball, goal0).length, players[i].inputs(players, ball, goal1), 0));
+      networks[i].push(new NLayer(players[i].inputs(players, ball, goal0).length, players[i].inputs(players, ball, goal0), 0));
       networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
       networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
-      networks[i].push(new NLayer(3, networks[i][2].outputs, 3));
+      networks[i].push(new NLayer(4, networks[i][2].outputs, 3));
+      networks[i].push(new NLayer(3, networks[i][3].outputs, 4));
     }
   }
   //Render objects
@@ -170,9 +167,9 @@ function draw() {
   }
   //Map outputs of last layer to player controls
   for (let i = 0; i < networks.length; i++) {
-    players[i].up(networks[i][3].outputs[0]);
-    players[i].side(networks[i][3].outputs[1]);
-    players[i].kick = (networks[i][3].outputs[2] > 0 ? true : false);
+    players[i].up(networks[i][networks[i].length-1].outputs[0]);
+    players[i].side(networks[i][networks[i].length-1].outputs[1]);
+    players[i].kick = (networks[i][networks[i].length-1].outputs[2] > 0 ? true : false);
     //Renders networks
     for (let l = networks[i].length - 1; l >= 0; l--) {
       networks[i][l].render((l + 1) * 30 + i * 200, 10, 60);
