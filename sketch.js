@@ -27,7 +27,7 @@ class NLayer {
     }
   }
   //Matrix max
-  forward(inputs, team) {
+  forward(inputs) {
     this.inputs = inputs;
     if (this.pos > 0) {
       for (let o = 0; o < this.outputs.length; o++) {
@@ -36,7 +36,7 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        this.outputs[o] = 10*activate(this.outputs[o]);
+        this.outputs[o] = 20 * activate(this.outputs[o]);
       }
     }
     else {
@@ -63,14 +63,14 @@ class NLayer {
     this.weights = Array.from(genome.slice(1));
     this.biases = Array.from(genome[0]);
     for (let o = 0; o < this.weights.length; o++) {
-      //20% mutation chance
+      //8% mutation chance
       let dice = random(100);
-      if (dice < 5) {
+      if (dice < 8) {
         for (let i = 0; i < this.weights[o].length; i++) {
           console.log('mutation');
           this.weights[o][i] = random(-1, 1);
         }
-        this.biases[o] = random(-1, 1);
+        this.biases[o] = 0;
       }
     }
   }
@@ -91,7 +91,7 @@ class NLayer {
       } if (this.pos == 4) {
         text(round(this.outputs[o]), this.x, oY);
       }
-      strokeWeight(abs(this.outputs[o] / 500));
+      strokeWeight(abs(this.outputs[o] / 400));
       ellipse(this.x, oY, this.r);
       strokeWeight(0);
     }
@@ -159,17 +159,17 @@ function draw() {
     }
     for (let l = 1; l < networks[i].length; l++) {
       if (i < networks.length / 2) {
-        networks[i][l].forward(networks[i][l - 1].outputs, 0);
+        networks[i][l].forward(networks[i][l - 1].outputs);
       } else {
-        networks[i][l].forward(networks[i][l - 1].outputs, 1);
+        networks[i][l].forward(networks[i][l - 1].outputs);
       }
     }
   }
   //Map outputs of last layer to player controls
   for (let i = 0; i < networks.length; i++) {
-    players[i].up(networks[i][networks[i].length-1].outputs[0]);
-    players[i].side(networks[i][networks[i].length-1].outputs[1]);
-    players[i].kick = (networks[i][networks[i].length-1].outputs[2] > 0 ? true : false);
+    players[i].up(networks[i][networks[i].length - 1].outputs[0]);
+    players[i].side(networks[i][networks[i].length - 1].outputs[1]);
+    players[i].kick = (networks[i][networks[i].length - 1].outputs[2] > 0 ? true : false);
     //Renders networks
     for (let l = networks[i].length - 1; l >= 0; l--) {
       networks[i][l].render((l + 1) * 30 + i * 200, 10, 60);
@@ -204,7 +204,7 @@ function draw() {
     time = 0;
     result = 0;
   }
-  else if (time > 240) {
+  else if (time > 1200) {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
