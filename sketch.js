@@ -36,7 +36,7 @@ class NLayer {
           this.outputs[o] += this.inputs[i] * this.weights[o][i];
         }
         this.outputs[o] += this.biases[o];
-        this.outputs[o] =  10*activate(this.outputs[o]);
+        this.outputs[o] = 10 * activate(this.outputs[o]);
       }
     }
     else {
@@ -97,18 +97,19 @@ class NLayer {
     }
   }
 }
+var ball;
 var time = 0;
 var result = 0;
 var players = [];
+var policy = new Graph([0, 2]);
 var networks = new Array(4);
-var ball;
 
 function setup() {
   windowWidth -= 30;
   windowHeight -= 30;
   createCanvas(windowWidth, windowHeight);
-  noStroke();
   rectMode(CENTER);
+  noStroke();
   //Create players, balls and goals
   for (let i = 0; i < networks.length; i++) {
     if (i < networks.length / 2) {
@@ -125,17 +126,13 @@ function setup() {
     networks[i] = [];
     if (i < networks.length / 2) {
       networks[i].push(new NLayer(players[i].inputs(players, ball, goal1).length, players[i].inputs(players, ball, goal1), 0));
-      networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
-      networks[i].push(new NLayer(4, networks[i][2].outputs, 3));
-      networks[i].push(new NLayer(3, networks[i][3].outputs, 4));
     } else {
       networks[i].push(new NLayer(players[i].inputs(players, ball, goal0).length, players[i].inputs(players, ball, goal0), 0));
-      networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
-      networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
-      networks[i].push(new NLayer(4, networks[i][2].outputs, 3));
-      networks[i].push(new NLayer(3, networks[i][3].outputs, 4));
     }
+    networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
+    networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
+    networks[i].push(new NLayer(4, networks[i][2].outputs, 3));
+    networks[i].push(new NLayer(3, networks[i][3].outputs, 4));
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
@@ -186,9 +183,10 @@ function draw() {
         networks[i][l].encode = cross[l];
       }
     }
-    reset(players, ball);
+    policy.input = players[male].s;
     time = 0;
     result = 0;
+    reset(players, ball);
   }
   else if (result > 0) {
     let scores = players.map(player => player.s);
@@ -200,11 +198,12 @@ function draw() {
         networks[i][l].encode = cross[l];
       }
     }
-    reset(players, ball);
+    policy.input = players[male].s;
     time = 0;
     result = 0;
+    reset(players, ball);
   }
-  else if (time > 1200) {
+  else if (time > 100) {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
@@ -218,9 +217,10 @@ function draw() {
         }
       }
     }
-    reset(players, ball);
+    policy.input = players[male].s;
     time = 0;
     result = 0;
+    reset(players, ball);
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
@@ -229,6 +229,7 @@ function draw() {
   ball.render();
   goal0.render();
   goal1.render();
+  policy.render(10, windowHeight-10, 5);
 }
 
 function Player(xx, yy, tt) {
