@@ -67,7 +67,6 @@ class NLayer {
       let dice = random(100);
       if (dice < 8) {
         for (let i = 0; i < this.weights[o].length; i++) {
-          console.log('mutation');
           this.weights[o][i] = random(-1, 1);
         }
         this.biases[o] = 0;
@@ -101,7 +100,7 @@ var ball;
 var time = 0;
 var result = 0;
 var players = [];
-var policy = new Graph([0, 2]);
+var policy = new Graph([0]);
 var networks = new Array(4);
 
 function setup() {
@@ -208,7 +207,6 @@ function draw() {
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     console.log(scores);
-    console.log(female, male);
     for (let i = 0; i < networks.length; i++) {
       let cross = crossOver(networks[female], networks[male]);
       if (i != female & i != male) {
@@ -229,7 +227,7 @@ function draw() {
   ball.render();
   goal0.render();
   goal1.render();
-  policy.render(10, windowHeight-10, 5);
+  policy.render(10, windowHeight - 10, 5);
 }
 
 function Player(xx, yy, tt) {

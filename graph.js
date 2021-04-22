@@ -9,11 +9,12 @@ class Graph {
         this.x = xx;
         this.y = yy;
         this.s = ss;
+        console.log(this.inputs)
         for (var i = 1; i < this.inputs.length; i++) {
             strokeWeight(2);
-            line((i - 1) * this.s + this.x, this.inputs[i - 1] + this.y, i * this.s + this.x, -this.inputs[i] + this.y);
+            line((i - 1) * this.s + this.x, -this.inputs[i - 1] + this.y, i * this.s + this.x, -this.inputs[i] + this.y);
         }
         noStroke();
-        text(-this.inputs[i - 1], i * this.s + this.x, -this.inputs[i - 1] + this.y);
+        text(this.inputs[i - 1], i * this.s + this.x, -this.inputs[i - 1] + this.y);
     }
 }
