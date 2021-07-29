@@ -1,9 +1,12 @@
-var ball;
-var time = 0;
-var result = 0;
-var players = [];
+const config = {
+  teamSize: 3,
+  time: 50
+}
 var policy = new Graph([0]);
-var networks = new Array(4);
+var networks = [];
+var players = [];
+var result = 0;
+var time = 0;
 
 function setup() {
   windowHeight, windowWidth -= 50;
@@ -12,28 +15,17 @@ function setup() {
   noStroke();
 
   //Create players, balls and goals
-  for (let i = 0; i < networks.length; i++) {
-    if (i < networks.length / 2) {
-      players.push(new Player(windowWidth / 3, windowHeight / (networks.length / 2 + 1) * (i + 1), 0));
-    } else {
-      players.push(new Player(windowWidth * 2 / 3, windowHeight / (networks.length / 2 + 1) * (i - (networks.length / 2 - 1)), 1));
-    }
-  }
   goal0 = new Goal(0, windowHeight / 2);
   goal1 = new Goal(windowWidth, windowHeight / 2);
   ball = new Ball(windowWidth / 2, windowHeight / 2);
+  for (let i = 0; i < config.teamSize; i++) {
+    players.push(new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0));
+    players.push(new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (i - (config.teamSize - 1)), 1));
+  }
   //Shape networks
-  for (let i = 0; i < networks.length; i++) {
-    networks[i] = [];
-    if (i < networks.length / 2) {
-      networks[i].push(new NLayer(players[i].inputs(players, ball, goal1).length, players[i].inputs(players, ball, goal1), 0));
-    } else {
-      networks[i].push(new NLayer(players[i].inputs(players, ball, goal0).length, players[i].inputs(players, ball, goal0), 0));
-    }
-    networks[i].push(new NLayer(6, networks[i][0].outputs, 1));
-    networks[i].push(new NLayer(5, networks[i][1].outputs, 2));
-    networks[i].push(new NLayer(4, networks[i][2].outputs, 3));
-    networks[i].push(new NLayer(3, networks[i][3].outputs, 4));
+  for (let i = 0; i < config.teamSize; i++) {
+    networks.push(new NNetwork(players[i].inputs(players, ball, goal1), [6, 5, 4, 3]));
+    networks.push(new NNetwork(players[i * 2].inputs(players, ball, goal0), [6, 5, 4, 3]));
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
@@ -49,22 +41,12 @@ function draw() {
   logic(players, ball);
   time += 1;
   //Forward propagation
-  for (let i = 0; i < networks.length; i++) {
-    if (i < networks.length / 2) {
-      networks[i][0].forward(players[i].inputs(players, ball, goal1));
-    } else {
-      networks[i][0].forward(players[i].inputs(players, ball, goal0));
-    }
-    for (let l = 1; l < networks[i].length; l++) {
-      if (i < networks.length / 2) {
-        networks[i][l].forward(networks[i][l - 1].outputs);
-      } else {
-        networks[i][l].forward(networks[i][l - 1].outputs);
-      }
-    }
+  for (let i = 0; i < config.teamSize; i++) {
+    networks[i].forward(players[i].inputs(players, ball, goal1));
+    networks[i*2].forward(players[i*2].inputs(players, ball, goal0));
   }
   //Map outputs of last layer to player controls
-  for (let i = 0; i < networks.length; i++) {
+  for (let i = 0; i < config.teamSize; i++) {
     players[i].up(networks[i][networks[i].length - 1].outputs[0]);
     players[i].side(networks[i][networks[i].length - 1].outputs[1]);
     players[i].kick = (networks[i][networks[i].length - 1].outputs[2] > 0 ? true : false);
@@ -78,7 +60,7 @@ function draw() {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    for (let i = networks.length / 2; i < networks.length; i++) {
+    for (let i = config.teamSize / 2; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
         networks[i][l].encode = cross[l];
@@ -93,7 +75,7 @@ function draw() {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    for (let i = 0; i < networks.length / 2; i++) {
+    for (let i = 0; i < config.teamSize / 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
         networks[i][l].encode = cross[l];
@@ -109,7 +91,7 @@ function draw() {
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     console.log(scores);
-    for (let i = 0; i < networks.length; i++) {
+    for (let i = 0; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
       if (i != female & i != male) {
         for (let l = 1; l < networks[i].length; l++) {
@@ -130,79 +112,6 @@ function draw() {
   goal0.render();
   goal1.render();
   policy.render(10, windowHeight - 10, 5);
-}
-
-function Player(xx, yy, tt) {
-  this.t = tt;
-  this.r = 25;
-  this.x = xx;
-  this.y = yy;
-  this.s = 0;
-  this.kick = false;
-  this.up = (f) => {
-    this.y += f;
-  }
-  this.side = (s) => {
-    this.x += s;
-  }
-  this.render = () => {
-    this.kick = false;
-    if (this.t == 1) {
-      fill(0, 0, 255);
-    }
-    else {
-      fill(255, 0, 0)
-    }
-    ellipse(this.x, this.y, this.r * 2);
-  }
-  this.inputs = (players, ball, goal) => {
-    let inputs = [];
-    let dist = [];
-    if (this.t == 0) {
-      players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
-      inputs.push(players[dist.indexOf([...dist].sort()[0]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[0]) + players.length / 2].y - this.y);
-      dist = [];
-      players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
-      inputs.push(players[dist.indexOf([...dist].sort()[1])].x - this.x, players[dist.indexOf([...dist].sort()[1])].y - this.y);
-    } else {
-      players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
-      inputs.push(players[dist.indexOf([...dist].sort()[0])].x - this.x, players[dist.indexOf([...dist].sort()[0])].y - this.y);
-      dist = [];
-      players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
-      inputs.push(players[dist.indexOf([...dist].sort()[1]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[1]) + players.length / 2].y - this.y);
-    }
-    inputs.push(ball.x - this.x, ball.y - this.y);
-    inputs.push(goal.x - this.x, goal.y - this.y);
-    return inputs
-  }
-}
-
-function Ball(xx, yy) {
-  this.r = 10;
-  this.x = xx;
-  this.y = yy;
-  this.collision = (dx, dy, kick) => {
-    if (kick) {
-      this.x -= dx * 4;
-      this.y -= dy * 4;
-    }
-    else {
-      this.x -= dx;
-      this.y -= dy;
-    }
-  }
-  this.render = () => {
-    fill(0, 255, 0);
-    ellipse(this.x, this.y, this.r * 2);
-  }
-}
-
-function Goal(xx, yy) {
-  this.x = xx;
-  this.y = yy;
-  this.render = () => {
-    rect(this.x, this.y, 40, 160);
-  }
 }
 
 function logic(players, ball) {
@@ -236,11 +145,11 @@ function reset(players, ball) {
   for (let i = 0; i < players.length; i++) {
     if (i < players.length / 2) {
       players[i].x = windowWidth / 3;
-      players[i].y = windowHeight / (networks.length / 2 + 1) * (i + 1);
+      players[i].y = windowHeight / (config.teamSize / 2 + 1) * (i + 1);
       players[i].s = 0;
     } else {
       players[i].x = windowWidth * 2 / 3;
-      players[i].y = windowHeight / (networks.length / 2 + 1) * (i - (networks.length / 2 - 1));
+      players[i].y = windowHeight / (config.teamSize / 2 + 1) * (i - (config.teamSize / 2 - 1));
       players[i].s = 0;
     }
   }
