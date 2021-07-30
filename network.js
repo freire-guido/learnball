@@ -1,26 +1,16 @@
 class NLayer {
-    constructor(size, inputs, position, random = true) {
+    constructor(size, inputs, position, randomize = false) {
         this.inputs = inputs;
         this.outputs = new Array(size);
         this.weights = new Array(size);
         this.biases = new Array(size);
         this.pos = position;
-        //Initialize random weights and biases
-        if (this.pos == 0) {
+        if (randomize) {
             for (let o = 0; o < this.weights.length; o++) {
                 this.weights[o] = new Array(this.inputs.length);
-                this.biases[o] = 0;
+                this.biases[o] = random(-1, 1);
                 for (let i = 0; i < this.inputs.length; i++) {
-                    this.weights[o][i] = 1;
-                }
-            }
-        }
-        if (random) {
-            for (let o = 0; o < this.weights.length; o++) {
-                this.weights[o] = new Array(this.inputs.length);
-                this.biases[o] = Math.random(-1, 1);
-                for (let i = 0; i < this.inputs.length; i++) {
-                    this.weights[o][i] = Math.random(-1, 1);
+                    this.weights[o][i] = random(-1, 1);
                 }
             }
         } else {
@@ -69,14 +59,14 @@ class NLayer {
     set genome(genome) {
         this.weights = Array.from(genome.slice(1));
         this.biases = Array.from(genome[0]);
-        for (let o = 0; o < this.weights.length; o++) {
-            //8% mutation chance
-            let dice = random(100);
-            if (dice < 8) {
-                for (let i = 0; i < this.weights[o].length; i++) {
-                    this.weights[o][i] = random(-1, 1);
+        if (this.pos != 0) {
+            for (let o = 0; o < this.weights.length; o++) {
+                if (random(100) < 10) {
+                    for (let i = 0; i < this.weights[o].length; i++) {
+                        this.weights[o][i] = random(-1, 1);
+                    }
+                    this.biases[o] = 0;
                 }
-                this.biases[o] = 0;
             }
         }
     }
@@ -109,7 +99,7 @@ class NNetwork {
         this.layers = [];
         this.layers[0] = new NLayer(inputs.length, inputs, 0);
         sizes.forEach((size, index) => {
-            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1);
+            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1, true);
         })
     }
     forward(inputs) {
@@ -122,7 +112,7 @@ class NNetwork {
     }
     set genome(genome) {
         this.layers.forEach((layer, index) => {
-            layer.genome = genome
+            layer.genome = genome[index]
         });
     }
     get genome() {
