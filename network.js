@@ -25,12 +25,17 @@ class NLayer {
     }
     //Matrix math
     forward(inputs) {
-        for (let o = 0; o < this.outputs.length; o++) {
-            for (let i = 0; i < inputs.length; i++) {
-                this.outputs[o] = inputs[i] * this.weights[o][i];
+        if (this.pos == 0) {
+            this.outputs = inputs;
+        } else {
+            for (let o = 0; o < this.outputs.length; o++) {
+                this.outputs[o] = 0
+                for (let i = 0; i < inputs.length; i++) {
+                    this.outputs[o] += inputs[i] * this.weights[o][i];
+                }
+                //this.outputs[o] += this.biases[o];
+                this.outputs[o] = activate(this.outputs[o]);
             }
-            this.outputs[o] += this.biases[o];
-            if (this.pos != 0) this.outputs[o] = 10 * activate(this.outputs[o]);
         }
         //tanh activation function
         function activate(z) {
@@ -52,7 +57,7 @@ class NLayer {
         this.biases = Array.from(genome[0]);
         if (this.pos != 0) {
             for (let o = 0; o < this.weights.length; o++) {
-                if (random(100) < 10) {
+                if (random(100) < 8) {
                     for (let i = 0; i < this.weights[o].length; i++) {
                         this.weights[o][i] = random(-1, 1);
                     }
@@ -75,10 +80,13 @@ class NLayer {
                     line(this.x - 30, iY, this.x, oY);
                     strokeWeight(0);
                 }
-            } if (this.pos == 4) {
-                text(round(this.outputs[o]), this.x, oY);
             }
-            strokeWeight(abs(this.outputs[o] / 5));
+            if (this.outputs[o] > 0) {
+                fill(0, this.outputs[o] * 255, 0);
+            }
+            else {
+                fill(Math.abs(this.outputs[o] * 255), 0, 0);
+            }
             ellipse(this.x, oY, this.r);
             strokeWeight(0);
         }

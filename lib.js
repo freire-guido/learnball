@@ -32,7 +32,6 @@ function Player(x, y, team, r = 25) {
     this.x += s;
   }
   this.render = () => {
-    this.kick = false;
     if (this.t == 1) {
       fill(0, 0, 255);
     }
@@ -57,8 +56,8 @@ function Player(x, y, team, r = 25) {
       players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
       inputs.push(players[dist.indexOf([...dist].sort()[1]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[1]) + players.length / 2].y - this.y);
     }
-    inputs.push(ball.x - this.x, ball.y - this.y);
     inputs.push(goal.x - this.x, goal.y - this.y);
+    inputs.push(ball.x - this.x, ball.y - this.y);
     return inputs;
   }
 }

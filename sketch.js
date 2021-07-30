@@ -1,6 +1,8 @@
 const config = {
-  teamSize: 3,
-  time: 250
+  teamSize: 2,
+  time: 200,
+  modifier: 50,
+  shape: [10,10,3]
 }
 var policy = new Graph([0]);
 var networks = [];
@@ -24,8 +26,8 @@ function setup() {
   }
   //Shape networks
   for (let i = 0; i < config.teamSize; i++) {
-    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), [6, 5, 4, 3]);
-    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), [6, 5, 4, 3]);
+    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
+    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
@@ -46,8 +48,8 @@ function draw() {
   }
   //Map outputs of last layer to player controls
   for (let i = 0; i < config.teamSize * 2; i++) {
-    players[i].up(networks[i].outputs[0]);
-    players[i].side(networks[i].outputs[1]);
+    players[i].up(networks[i].outputs[0] * config.modifier);
+    players[i].side(networks[i].outputs[1] * config.modifier);
     players[i].kick = (networks[i].outputs[2] > 0 ? true : false);
     //Renders networks
     for (let l = networks[i].layers.length - 1; l >= 0; l--) {
@@ -59,7 +61,7 @@ function draw() {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    for (let i = config.teamSize / 2; i < config.teamSize; i++) {
+    for (let i = config.teamSize; i < config.teamSize * 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
       networks[i].genome = cross;
     }
@@ -72,7 +74,7 @@ function draw() {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    for (let i = 0; i < config.teamSize / 2; i++) {
+    for (let i = 0; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
       networks[i].genome = cross;
     }
