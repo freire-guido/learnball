@@ -1,20 +1,20 @@
 class Graph {
   constructor(ii) {
-      this.inputs = ii;
+    this.inputs = ii;
   }
   set input(input) {
-      this.inputs.push(input);
+    this.inputs.push(input);
   }
   render(xx, yy, ss) {
-      this.x = xx;
-      this.y = yy;
-      this.s = ss;
-      for (var i = 1; i < this.inputs.length; i++) {
-          strokeWeight(2);
-          line((i - 1) * this.s + this.x, -this.inputs[i - 1] + this.y, i * this.s + this.x, -this.inputs[i] + this.y);
-      }
-      noStroke();
-      text(this.inputs[i - 1], i * this.s + this.x, -this.inputs[i - 1] + this.y);
+    this.x = xx;
+    this.y = yy;
+    this.s = ss;
+    for (var i = 1; i < this.inputs.length; i++) {
+      strokeWeight(2);
+      line((i - 1) * this.s + this.x, -this.inputs[i - 1] + this.y, i * this.s + this.x, -this.inputs[i] + this.y);
+    }
+    noStroke();
+    text(this.inputs[i - 1], i * this.s + this.x, -this.inputs[i - 1] + this.y);
   }
 }
 
@@ -59,7 +59,7 @@ function Player(x, y, team, r = 25) {
     }
     inputs.push(ball.x - this.x, ball.y - this.y);
     inputs.push(goal.x - this.x, goal.y - this.y);
-    return inputs
+    return inputs;
   }
 }
 

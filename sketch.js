@@ -61,9 +61,7 @@ function draw() {
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = config.teamSize / 2; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
-      for (let l = 1; l < networks[i].length; l++) {
-        networks[i][l].genome = cross[l];
-      }
+      networks[i].genome = cross;
     }
     policy.input = players[male].s;
     time = 0;
@@ -76,9 +74,7 @@ function draw() {
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = 0; i < config.teamSize / 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
-      for (let l = 1; l < networks[i].length; l++) {
-        networks[i][l].genome = cross[l];
-      }
+      networks[i].genome = cross;
     }
     policy.input = players[male].s;
     time = 0;
@@ -89,10 +85,12 @@ function draw() {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    for (let i = 0; i < config.teamSize; i++) {
-      let cross = crossOver(networks[female], networks[male]);
+    for (let i = 0; i < config.teamSize * 2; i++) {
       if (i != female & i != male) {
+        let cross = crossOver(networks[female], networks[male]);
         networks[i].genome = cross;
+      } else {
+        networks[i].genome = networks[i].genome;
       }
     }
     policy.input = players[male].s;
@@ -138,16 +136,14 @@ function logic(players, ball) {
 
 //Resets game conditions
 function reset(players, ball) {
-  for (let i = 0; i < players.length; i++) {
-    if (i < players.length / 2) {
-      players[i].x = windowWidth / 3;
-      players[i].y = windowHeight / (config.teamSize / 2 + 1) * (i + 1);
-      players[i].s = 0;
-    } else {
-      players[i].x = windowWidth * 2 / 3;
-      players[i].y = windowHeight / (config.teamSize / 2 + 1) * (i - (config.teamSize / 2 - 1));
-      players[i].s = 0;
-    }
+  for (let i = 0; i < config.teamSize; i++) {
+    players[i].x = windowWidth / 3;
+    players[i].y = windowHeight / (config.teamSize + 1) * (i + 1);
+    players[i].s = 0;
+
+    players[i + config.teamSize].x = windowWidth * 2 / 3;
+    players[i + config.teamSize].y = windowHeight / (config.teamSize + 1) * (config.teamSize - i);
+    players[i + config.teamSize].s = 0;
   }
   ball.x = windowWidth / 2;
   ball.y = windowHeight / 2;

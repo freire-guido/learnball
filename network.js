@@ -25,21 +25,12 @@ class NLayer {
     }
     //Matrix math
     forward(inputs) {
-        this.inputs = inputs;
-        if (this.pos > 0) {
-            for (let o = 0; o < this.outputs.length; o++) {
-                this.outputs[o] = 0;
-                for (let i = 0; i < this.inputs.length; i++) {
-                    this.outputs[o] += this.inputs[i] * this.weights[o][i];
-                }
-                this.outputs[o] += this.biases[o];
-                this.outputs[o] = 10 * activate(this.outputs[o]);
+        for (let o = 0; o < this.outputs.length; o++) {
+            for (let i = 0; i < inputs.length; i++) {
+                this.outputs[o] = inputs[i] * this.weights[o][i];
             }
-        }
-        else {
-            for (let i = 0; i < this.outputs.length; i++) {
-                this.outputs[i] = this.inputs[i];
-            }
+            this.outputs[o] += this.biases[o];
+            this.outputs[o] = 5*activate(this.outputs[o]);
         }
         //tanh activation function
         function activate(z) {
@@ -61,11 +52,11 @@ class NLayer {
         this.biases = Array.from(genome[0]);
         if (this.pos != 0) {
             for (let o = 0; o < this.weights.length; o++) {
-                if (random(100) < 10) {
+                if (random(100) < 8) {
                     for (let i = 0; i < this.weights[o].length; i++) {
                         this.weights[o][i] = random(-1, 1);
                     }
-                    this.biases[o] = 0;
+                    this.biases[o] = random(-1, 1);
                 }
             }
         }
@@ -104,7 +95,7 @@ class NNetwork {
     }
     forward(inputs) {
         this.layers.forEach((layer, index) => {
-            index == 0 ? layer.forward(inputs) : layer.forward(this.layers[index - 1]);
+            index == 0 ? layer.forward(inputs) : layer.forward(this.layers[index - 1].outputs);
         })
     }
     get outputs() {
