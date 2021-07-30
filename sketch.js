@@ -1,6 +1,6 @@
 const config = {
   teamSize: 3,
-  time: 50
+  time: 500
 }
 var policy = new Graph([0]);
 var networks = [];
@@ -63,7 +63,7 @@ function draw() {
     for (let i = config.teamSize / 2; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
-        networks[i][l].encode = cross[l];
+        networks[i][l].genome = cross[l];
       }
     }
     policy.input = players[male].s;
@@ -78,7 +78,7 @@ function draw() {
     for (let i = 0; i < config.teamSize / 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
       for (let l = 1; l < networks[i].length; l++) {
-        networks[i][l].encode = cross[l];
+        networks[i][l].genome = cross[l];
       }
     }
     policy.input = players[male].s;
@@ -94,7 +94,7 @@ function draw() {
       let cross = crossOver(networks[female], networks[male]);
       if (i != female & i != male) {
         for (let l = 1; l < networks[i].length; l++) {
-          networks[i][l].encode = cross[l];
+          networks[i][l].genome = cross[l];
         }
       }
     }
@@ -156,17 +156,15 @@ function reset(players, ball) {
   ball.y = windowHeight / 2;
 }
 
-//Merges a female and male network at a random cutoff, and returns the child network
+//Merges a female and male network at a random cutoff, and returns the child genome
 function crossOver(female, male) {
   this.female = [];
   this.male = [];
   this.child = new Array(male.length);
-  female.forEach(NLayer => { this.female.push(NLayer.genome) });
-  male.forEach(NLayer => { this.male.push(NLayer.genome) });
   for (let l = 0; l < this.female.length; l++) {
     let cutoff = round(random(this.male[l].length));
-    let first = this.male[l].slice(0, cutoff);
-    let second = this.female[l].slice(cutoff);
+    let first = male.genome[l].slice(0, cutoff);
+    let second = female.genome[l].slice(cutoff);
     this.child[l] = first.concat(second);
   }
   return this.child;

@@ -58,7 +58,7 @@ class NLayer {
         return genome;
     }
     //Sets all parameters to the ones specified in the genome
-    set encode(genome) {
+    set genome(genome) {
         this.weights = Array.from(genome.slice(1));
         this.biases = Array.from(genome[0]);
         for (let o = 0; o < this.weights.length; o++) {
@@ -101,15 +101,27 @@ class NNetwork {
         this.layers = [];
         this.layers[0] = new NLayer(inputs.length, inputs, 0);
         sizes.forEach((size, index) => {
-            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1)
+            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1);
         })
     }
     forward(inputs) {
         this.layers.forEach((layer, index) => {
-            index == 0 ? layer.forward(inputs) : layer.forward(this.layers[index - 1])
+            index == 0 ? layer.forward(inputs) : layer.forward(this.layers[index - 1]);
         })
     }
     get outputs() {
         return this.layers[this.layers.length - 1].outputs;
+    }
+    set genome(genome) {
+        this.layers.forEach((layer, index) => {
+            layer.genome = genome
+        });
+    }
+    get genome() {
+        let genome = [];
+        this.layers.forEach((layer, index) => {
+            genome[index] = layer.genome;
+        });
+        return genome;
     }
 }
