@@ -1,6 +1,5 @@
 class NLayer {
     constructor(size, inputs, position) {
-        this.test = 0;
         this.inputs = inputs;
         this.outputs = new Array(size);
         this.weights = new Array(size);
@@ -26,7 +25,7 @@ class NLayer {
             }
         }
     }
-    //Matrix max
+    //Matrix math
     forward(inputs) {
         this.inputs = inputs;
         if (this.pos > 0) {
@@ -102,12 +101,15 @@ class NNetwork {
         this.layers = [];
         this.layers[0] = new NLayer(inputs.length, inputs, 0);
         sizes.forEach((size, index) => {
-            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index)
+            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1)
         })
     }
     forward(inputs) {
         this.layers.forEach((layer, index) => {
-            index = 0 ? this.layers[index].forward(inputs) : this.layers[index].forward(this.layers[index - 1])
+            index == 0 ? layer.forward(inputs) : layer.forward(this.layers[index - 1])
         })
+    }
+    get outputs() {
+        return this.layers[this.layers.length - 1].outputs;
     }
 }
