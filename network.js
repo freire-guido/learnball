@@ -1,21 +1,29 @@
 class NLayer {
-    constructor(size, inputs, position) {
+    constructor(size, inputs, position, random = true) {
         this.inputs = inputs;
         this.outputs = new Array(size);
         this.weights = new Array(size);
         this.biases = new Array(size);
         this.pos = position;
         //Initialize random weights and biases
-        if (this.pos != 0) {
+        if (this.pos == 0) {
             for (let o = 0; o < this.weights.length; o++) {
                 this.weights[o] = new Array(this.inputs.length);
-                this.biases[o] = random(-1, 1);
+                this.biases[o] = 0;
                 for (let i = 0; i < this.inputs.length; i++) {
-                    this.weights[o][i] = random(-1, 1);
+                    this.weights[o][i] = 1;
                 }
             }
         }
-        else {
+        if (random) {
+            for (let o = 0; o < this.weights.length; o++) {
+                this.weights[o] = new Array(this.inputs.length);
+                this.biases[o] = Math.random(-1, 1);
+                for (let i = 0; i < this.inputs.length; i++) {
+                    this.weights[o][i] = Math.random(-1, 1);
+                }
+            }
+        } else {
             for (let o = 0; o < this.weights.length; o++) {
                 this.weights[o] = new Array(this.inputs.length);
                 this.biases[o] = 0;
