@@ -20,7 +20,7 @@ function setup() {
   ball = new Ball(windowWidth / 2, windowHeight / 2);
   for (let i = 0; i < config.teamSize; i++) {
     players[i] = new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0);
-    players[i + config.teamSize] = new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (i - (config.teamSize - 1)), 1);
+    players[i + config.teamSize] = new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (config.teamSize - i), 1);
   }
   //Shape networks
   for (let i = 0; i < config.teamSize; i++) {
