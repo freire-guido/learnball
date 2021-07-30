@@ -19,13 +19,13 @@ function setup() {
   goal1 = new Goal(windowWidth, windowHeight / 2);
   ball = new Ball(windowWidth / 2, windowHeight / 2);
   for (let i = 0; i < config.teamSize; i++) {
-    players.push(new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0));
-    players.push(new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (i - (config.teamSize - 1)), 1));
+    players[i] = new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0);
+    players[i + config.teamSize] = new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (i - (config.teamSize - 1)), 1);
   }
   //Shape networks
   for (let i = 0; i < config.teamSize; i++) {
-    networks.push(new NNetwork(players[i].inputs(players, ball, goal1), [6, 5, 4, 3]));
-    networks.push(new NNetwork(players[i * 2].inputs(players, ball, goal0), [6, 5, 4, 3]));
+    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), [6, 5, 4, 3]);
+    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), [6, 5, 4, 3]);
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
@@ -43,16 +43,16 @@ function draw() {
   //Forward propagation
   for (let i = 0; i < config.teamSize; i++) {
     networks[i].forward(players[i].inputs(players, ball, goal1));
-    networks[i*2].forward(players[i*2].inputs(players, ball, goal0));
+    networks[i + config.teamSize].forward(players[i + config.teamSize].inputs(players, ball, goal0));
   }
   //Map outputs of last layer to player controls
-  for (let i = 0; i < config.teamSize; i++) {
-    players[i].up(networks[i][networks[i].length - 1].outputs[0]);
-    players[i].side(networks[i][networks[i].length - 1].outputs[1]);
-    players[i].kick = (networks[i][networks[i].length - 1].outputs[2] > 0 ? true : false);
+  for (let i = 0; i < config.teamSize*2; i++) {
+    players[i].up(networks[i].outputs[0]);
+    players[i].side(networks[i].outputs[1]);
+    players[i].kick = (networks[i].outputs[2] > 0 ? true : false);
     //Renders networks
-    for (let l = networks[i].length - 1; l >= 0; l--) {
-      networks[i][l].render((l + 1) * 30 + i * 200, 10, 60);
+    for (let l = networks[i].layers.length - 1; l >= 0; l--) {
+      networks[i].layers[l].render((l + 1) * 30 + i * 200, 10, 60);
     }
   }
   //crossOver best players
@@ -86,11 +86,10 @@ function draw() {
     result = 0;
     reset(players, ball);
   }
-  else if (time > 100) {
+  else if (time > config.time) {
     let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    console.log(scores);
     for (let i = 0; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
       if (i != female & i != male) {
