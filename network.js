@@ -30,7 +30,7 @@ class NLayer {
                 this.outputs[o] = inputs[i] * this.weights[o][i];
             }
             this.outputs[o] += this.biases[o];
-            this.outputs[o] = 5*activate(this.outputs[o]);
+            if (this.pos != 0) this.outputs[o] = 10 * activate(this.outputs[o]);
         }
         //tanh activation function
         function activate(z) {
@@ -52,7 +52,7 @@ class NLayer {
         this.biases = Array.from(genome[0]);
         if (this.pos != 0) {
             for (let o = 0; o < this.weights.length; o++) {
-                if (random(100) < 8) {
+                if (random(100) < 10) {
                     for (let i = 0; i < this.weights[o].length; i++) {
                         this.weights[o][i] = random(-1, 1);
                     }
@@ -78,7 +78,7 @@ class NLayer {
             } if (this.pos == 4) {
                 text(round(this.outputs[o]), this.x, oY);
             }
-            strokeWeight(abs(this.outputs[o] / 400));
+            strokeWeight(abs(this.outputs[o] / 5));
             ellipse(this.x, oY, this.r);
             strokeWeight(0);
         }
