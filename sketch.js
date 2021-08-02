@@ -1,11 +1,13 @@
 const config = {
-  time: 200,
-  modifier: 20,
-  shape: [5, 6, 3]
+  time: 100,
+  modifier: 50,
+  shape: [8, 8, 5, 2]
 }
 var policy = new Graph([0]);
 var result = 0;
 var time = 0;
+var bestGenome;
+var bestScore = 0;
 var network;
 var player;
 
@@ -20,12 +22,14 @@ function setup() {
   ball = new Ball(windowWidth / 2, windowHeight / 2);
   player = new Player(windowWidth / 3, windowHeight / 2, 0);
   network = new NNetwork(player.inputs(player, ball, goal), config.shape);
+  bestGenome = network.genome;
 
   //Render objects
   player.render();
   ball.render();
   goal.render();
 }
+
 function draw() {
   background(255);
   logic(player, ball);
@@ -35,27 +39,27 @@ function draw() {
   player.up(network.outputs[0] * config.modifier);
   player.side(network.outputs[1] * config.modifier);
   player.kick = (network.outputs[2] > 0 ? true : false);
-  
+
   for (let l = network.layers.length - 1; l >= 0; l--) {
     network.layers[l].render((l + 1) * 30, 10, 60);
   }
 
   if (time > config.time) {
-    if (player.s < 0) {
-      network = new NNetwork(player.inputs(player, ball, goal), config.shape);
+    if (player.s > bestScore) {
+      console.log('CHANGE')
+      bestGenome = network.genome;
+      bestScore = player.s;
     }
-    else {
-      network.genome = network.genome;
-    }
+    console.log(bestScore, bestGenome[1][2], bestGenome[1][3], bestGenome[1][4])
+    network.genome = bestGenome;
     policy.input = player.s;
     time = 0;
     result = 0;
     reset(player, ball);
   }
 
-
   //Render objects
-  player.render();
+  player.render(player.s);
   ball.render();
   goal.render();
   policy.render(10, windowHeight - 10, 5);
@@ -78,8 +82,7 @@ function logic(player, ball) {
 
   //Goal detection logic
   if (ball.x < 40 && ball.y < goal.y + 40 && goal.y - 40 < ball.y) {
-    reset(player, ball);
-    result -= 1;
+    player.s += 100
   }
 }
 
@@ -92,13 +95,13 @@ function reset(player, ball) {
   ball.y = windowHeight / 2;
 }
 
-//Merges a female and male network at a random cutoff, and returns the child genome
+//Merges a female and male genome at a random cutoff, and returns the child genome
 function crossOver(female, male) {
   this.child = new Array(male.length);
-  for (let l = 0; l < female.genome.length; l++) {
-    let cutoff = round(random(male.genome[l].length));
-    let first = male.genome[l].slice(0, cutoff);
-    let second = female.genome[l].slice(cutoff);
+  for (let l = 0; l < female.length; l++) {
+    let cutoff = round(random(male[l].length));
+    let first = male[l].slice(0, cutoff);
+    let second = female[l].slice(cutoff);
     this.child[l] = first.concat(second);
   }
   return this.child;
