@@ -49,12 +49,12 @@ class NLayer {
         for (let o = 0; o < this.outputs.length; o++) {
             genome.push(this.weights[o]);
         }
-        return genome;
+        return JSON.parse(JSON.stringify(genome));
     }
     //Sets all parameters to the ones specified in the genome
     set genome(genome) {
-        this.weights = Array.from(genome.slice(1));
-        this.biases = Array.from(genome[0]);
+        this.weights = JSON.parse(JSON.stringify(Array.from(genome.slice(1))));
+        this.biases = JSON.parse(JSON.stringify(Array.from(genome[0])));
         if (this.pos != 0) {
             for (let o = 0; o < this.weights.length; o++) {
                 if (random(100) < 8) {
