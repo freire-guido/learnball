@@ -1,7 +1,7 @@
 const config = {
   teamSize: 2,
-  time: 200,
-  modifier: 50,
+  time: 500,
+  modifier: 20,
   shape: [10,10,3]
 }
 var policy = new Graph([0]);
@@ -31,7 +31,7 @@ function setup() {
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
-    players[i].render();
+    players[i].render(i);
   }
   ball.render();
   goal0.render();
@@ -102,7 +102,7 @@ function draw() {
   }
   //Render objects
   for (let i = 0; i < players.length; i++) {
-    players[i].render();
+    players[i].render(i);
   }
   ball.render();
   goal0.render();

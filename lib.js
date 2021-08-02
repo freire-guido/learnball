@@ -31,7 +31,7 @@ function Player(x, y, team, r = 25) {
   this.side = (s) => {
     this.x += s;
   }
-  this.render = () => {
+  this.render = (index = undefined) => {
     if (this.t == 1) {
       fill(0, 0, 255);
     }
@@ -39,6 +39,12 @@ function Player(x, y, team, r = 25) {
       fill(255, 0, 0)
     }
     ellipse(this.x, this.y, this.r * 2);
+    if (index !== undefined) {
+      textSize(20);
+      textAlign(CENTER);
+      fill(255,255,255);
+      text(index, this.x, this.y + (this.r - 20) / 2);
+    }
   }
   this.inputs = (players, ball, goal) => {
     let inputs = [];
