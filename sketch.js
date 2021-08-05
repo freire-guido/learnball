@@ -1,8 +1,8 @@
 const config = {
   teamSize: 2,
   time: 500,
-  modifier: 20,
-  shape: [10,10,3]
+  modifier: 30,
+  shape: [10, 10, 1],
 }
 var policy = new Graph([0]);
 var result = 0;
@@ -22,8 +22,10 @@ function setup() {
   goal = new Goal(windowWidth, windowHeight / 2);
   ball = new Ball(windowWidth / 2, windowHeight / 2);
   player = new Player(windowWidth / 3, windowHeight / 2, 0);
-  network = new NNetwork(player.inputs(player, ball, goal), config.shape);
-  bestGenome = network.genome;
+  xNetwork = new NNetwork(player.inputs(player, ball, goal, 'x'), config.shape);
+  yNetwork = new NNetwork(player.inputs(player, ball, goal, 'y'), config.shape);
+  bestXGenome = xNetwork.genome;
+  bestYGenome = yNetwork.genome;
 
   //Render objects
   player.render();
@@ -36,23 +38,28 @@ function draw() {
   logic(player, ball);
   time += 1;
 
-  network.forward(player.inputs(player, ball, goal));
-  player.up(network.outputs[0] * config.modifier);
-  player.side(network.outputs[1] * config.modifier);
-  player.kick = (network.outputs[2] > 0 ? true : false);
+  xNetwork.forward(player.inputs(player, ball, goal, 'x'));
+  yNetwork.forward(player.inputs(player, ball, goal, 'y'));
+  player.side(xNetwork.outputs[0] * config.modifier);
+  player.up(yNetwork.outputs[0] * config.modifier);
+  //player.kick = (network.outputs[2] > 0 ? true : false); TODO figure out kick specialization
 
-  for (let l = network.layers.length - 1; l >= 0; l--) {
-    network.layers[l].render((l + 1) * 30, 10, 60);
+  for (let l = xNetwork.layers.length - 1; l >= 0; l--) {
+    xNetwork.layers[l].render((l + 1) * 30, 10, 60);
+  }
+
+  for (let l = yNetwork.layers.length - 1; l >= 0; l--) {
+    yNetwork.layers[l].render((l + 1) * 30, 80, 60);
   }
 
   if (time > config.time) {
     if (player.s > bestScore) {
-      console.log('CHANGE')
-      bestGenome = network.genome;
+      bestXGenome = xNetwork.genome;
+      bestYGenome = yNetwork.genome;
       bestScore = player.s;
     }
-    console.log(bestScore, bestGenome[1][2], bestGenome[1][3], bestGenome[1][4])
-    network.genome = bestGenome;
+    xNetwork.genome = bestXGenome;
+    yNetwork.genome = bestYGenome;
     policy.input = player.s;
     time = 0;
     result = 0;

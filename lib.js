@@ -43,11 +43,11 @@ function Player(x, y, team, r = 25) {
     if (index !== undefined) {
       textSize(20);
       textAlign(CENTER);
-      fill(255,255,255);
+      fill(255, 255, 255);
       text(index, this.x, this.y + (this.r - 20) / 2);
     }
   }
-  this.inputs = (players, ball, goal) => {
+  this.inputs = (players, ball, goal, filter = undefined) => {
     let inputs = [];
     let dist = [];
     /*if (this.t == 0) {
@@ -62,10 +62,21 @@ function Player(x, y, team, r = 25) {
       dist = [];
       players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
       inputs.push(players[dist.indexOf([...dist].sort()[1]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[1]) + players.length / 2].y - this.y);
-    }
-    inputs.push(goal.x - this.x, goal.y - this.y);*/
+    }*/
+    inputs.push(goal.x - this.x, goal.y - this.y);
     inputs.push(ball.x - this.x, ball.y - this.y);
-    return inputs;
+    if (filter) {
+      let x = [];
+      let y = [];
+      inputs.forEach((input, index) => { index % 2 == 0 ? x.push(input) : y.push(input) });
+      if (filter === 'x') {
+        return x;
+      } else if (filter === 'y') {
+        return y;
+      }
+    } else {
+      return inputs;
+    }
   }
 }
 
