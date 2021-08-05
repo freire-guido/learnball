@@ -119,6 +119,7 @@ class NNetwork {
         this.layers.forEach((layer, index) => {
             genome[index] = layer.genome;
         });
+        genome = JSON.parse(JSON.stringify(genome))
         return genome;
     }
 }

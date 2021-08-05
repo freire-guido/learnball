@@ -14,6 +14,7 @@ class Graph {
       line((i - 1) * this.s + this.x, -this.inputs[i - 1] + this.y, i * this.s + this.x, -this.inputs[i] + this.y);
     }
     noStroke();
+    textSize(12);
     text(this.inputs[i - 1], i * this.s + this.x, -this.inputs[i - 1] + this.y);
   }
 }
@@ -49,7 +50,7 @@ function Player(x, y, team, r = 25) {
   this.inputs = (players, ball, goal) => {
     let inputs = [];
     let dist = [];
-    if (this.t == 0) {
+    /*if (this.t == 0) {
       players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
       inputs.push(players[dist.indexOf([...dist].sort()[0]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[0]) + players.length / 2].y - this.y);
       dist = [];
@@ -62,7 +63,7 @@ function Player(x, y, team, r = 25) {
       players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))) });
       inputs.push(players[dist.indexOf([...dist].sort()[1]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[1]) + players.length / 2].y - this.y);
     }
-    inputs.push(goal.x - this.x, goal.y - this.y);
+    inputs.push(goal.x - this.x, goal.y - this.y);*/
     inputs.push(ball.x - this.x, ball.y - this.y);
     return inputs;
   }
