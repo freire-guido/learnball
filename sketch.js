@@ -116,9 +116,9 @@ function logic(players, ball) {
       ball.collision(dx, dy, players[i].kick);
       players[i].s += 1;
     }
-    //Penalize going outside the field
-    if (players[i].x > windowWidth | players[i].x < 0 | players[i].y > windowHeight | players[i].y < 0) {
-      players[i].s -= 0.1;
+    //Reward staying in the field
+    if (players[i].x < windowWidth && players[i].x > 0 && players[i].y < windowHeight && players[i].y > 0) {
+      players[i].s += 0.05;
     }
   }
   //Goal detection logic
@@ -132,7 +132,7 @@ function logic(players, ball) {
   }
 }
 
-//Resets game conditions
+//Resets playing field
 function reset(players, ball) {
   for (let i = 0; i < config.teamSize; i++) {
     players[i].x = windowWidth / 3;
