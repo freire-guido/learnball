@@ -82,9 +82,10 @@ class Player {
   inputs = (player, ball, goal) => {
     let inputs = [];
     if (this.t == 0) {
-    inputs.push(ball.x - this.x, ball.y - this.y);
-    inputs.push(player.x - this.x, player.y - this.y);
-    return inputs;
+      inputs.push(player.x - this.x, player.y - this.y);
+      inputs.push(ball.x - this.x, ball.y - this.y);
+      inputs.push(goal.x - this.x, goal.y - this.y);
+      return inputs;
     }
   }
 }
