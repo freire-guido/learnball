@@ -2,7 +2,7 @@ const config = {
   teamSize: 2,
   time: 200,
   modifier: 100,
-  shape: [4,4,3]
+  shape: [4,4,2]
 }
 var policy = new Graph([0]);
 var networks = [];
@@ -40,15 +40,10 @@ function draw() {
   logic(players, ball);
   time += 1;
   //Forward propagation
-  for (let i = 0; i < config.teamSize; i++) {
+  for (let i = 0; i < networks.length; i++) {
     networks[i].forward(players[i].inputs(players, ball, goal1));
-    networks[i + config.teamSize].forward(players[i + config.teamSize].inputs(players, ball, goal0));
-  }
-  //Map outputs of last layer to player controls
-  for (let i = 0; i < config.teamSize * 2; i++) {
     players[i].up(networks[i].outputs[0] * config.modifier);
     players[i].side(networks[i].outputs[1] * config.modifier);
-    players[i].kick = (networks[i].outputs[2] > 0 ? true : false);
     //Renders networks
     for (let l = networks[i].layers.length - 1; l >= 0; l--) {
       networks[i].layers[l].render((l + 1) * 30 + i * 200, 10, 60);
