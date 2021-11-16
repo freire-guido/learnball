@@ -1,8 +1,8 @@
 const config = {
   teamSize: 2,
-  time: 500,
-  modifier: 20,
-  shape: [10,10,3]
+  time: 200,
+  modifier: 100,
+  shape: [4,4,3]
 }
 var policy = new Graph([0]);
 var networks = [];
@@ -23,15 +23,13 @@ function setup() {
   for (let i = 0; i < config.teamSize; i++) {
     players[i] = new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0);
     players[i + config.teamSize] = new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (config.teamSize - i), 1);
+    players[i].render(i);
+    players[i + config.teamSize].render(i + config.teamSize);
   }
   //Shape networks
   for (let i = 0; i < config.teamSize; i++) {
     networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
     networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
-  }
-  //Render objects
-  for (let i = 0; i < players.length; i++) {
-    players[i].render(i);
   }
   ball.render();
   goal0.render();
@@ -57,8 +55,8 @@ function draw() {
     }
   }
   //crossOver best players
+  let scores = players.map(player => player.s);
   if (result < 0) {
-    let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = config.teamSize; i < config.teamSize * 2; i++) {
@@ -71,7 +69,6 @@ function draw() {
     reset(players, ball);
   }
   else if (result > 0) {
-    let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = 0; i < config.teamSize; i++) {
@@ -84,7 +81,6 @@ function draw() {
     reset(players, ball);
   }
   else if (time > config.time) {
-    let scores = players.map(player => player.s);
     let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
     let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = 0; i < config.teamSize * 2; i++) {
@@ -153,12 +149,12 @@ function reset(players, ball) {
 
 //Merges a female and male network at a random cutoff, and returns the child genome
 function crossOver(female, male) {
-  this.child = new Array(male.length);
+  var child = new Array(male.length);
   for (let l = 0; l < female.genome.length; l++) {
     let cutoff = round(random(male.genome[l].length));
     let first = male.genome[l].slice(0, cutoff);
     let second = female.genome[l].slice(cutoff);
-    this.child[l] = first.concat(second);
+    child[l] = first.concat(second);
   }
-  return this.child;
+  return child;
 }
