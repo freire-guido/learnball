@@ -1,7 +1,6 @@
 const config = {
   teamSize: 2,
   time: 200,
-  modifier: 100,
   shape: [4,4,2]
 }
 var policy = new Graph([0]);
@@ -9,10 +8,12 @@ var networks = [];
 var players = [];
 var result = 0;
 var time = 0;
+var pause = false;
+var modifier = 100
 
 function setup() {
   windowHeight, windowWidth -= 50;
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(windowWidth, windowHeight - 20);
   rectMode(CENTER);
   noStroke();
 
@@ -36,14 +37,15 @@ function setup() {
   goal1.render();
 }
 function draw() {
+  if (pause) return;
   background(255);
   logic(players, ball);
   time += 1;
   //Forward propagation
   for (let i = 0; i < networks.length; i++) {
     networks[i].forward(players[i].inputs(players, ball, goal1));
-    players[i].up(networks[i].outputs[0] * config.modifier);
-    players[i].side(networks[i].outputs[1] * config.modifier);
+    players[i].up(networks[i].outputs[0] * modifier);
+    players[i].side(networks[i].outputs[1] * modifier);
     //Renders networks
     for (let l = networks[i].layers.length - 1; l >= 0; l--) {
       networks[i].layers[l].render((l + 1) * 30 + i * 200, 10, 60);
@@ -144,7 +146,7 @@ function reset(players, ball) {
 
 //Merges a female and male network at a random cutoff, and returns the child genome
 function crossOver(female, male) {
-  var child = new Array(male.length);
+  let child = new Array(male.length);
   for (let l = 0; l < female.genome.length; l++) {
     let cutoff = round(random(male.genome[l].length));
     let first = male.genome[l].slice(0, cutoff);
@@ -152,4 +154,16 @@ function crossOver(female, male) {
     child[l] = first.concat(second);
   }
   return child;
+}
+
+function keyTyped() {
+  if (keyCode === 32){
+    pause = !pause;
+  }
+  if (keyCode === 87){
+    modifier += 10;
+  }
+  if (keyCode === 83){
+    modifier -= 10;
+  }
 }
