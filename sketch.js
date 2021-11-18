@@ -1,106 +1,88 @@
 const config = {
   teamSize: 2,
-  time: 200,
-  shape: [4,4,2]
+  time: 10000,
+  shape: [4, 4, 2]
 }
-var policy = new Graph([0]);
-var networks = [];
-var players = [];
-var result = 0;
-var time = 0;
+var policy;
 var pause = false;
-var modifier = 100
+var modifier = 50;
+var genome = undefined;
 
 function setup() {
   windowHeight, windowWidth -= 50;
   createCanvas(windowWidth, windowHeight - 20);
-  rectMode(CENTER);
-  noStroke();
-
-  //Create players, balls and goals
-  goal0 = new Goal(0, windowHeight / 2);
-  goal1 = new Goal(windowWidth, windowHeight / 2);
-  ball = new Ball(windowWidth / 2, windowHeight / 2);
-  for (let i = 0; i < config.teamSize; i++) {
-    players[i] = new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0);
-    players[i + config.teamSize] = new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (config.teamSize - i), 1);
-    players[i].render(i);
-    players[i + config.teamSize].render(i + config.teamSize);
-  }
-  //Shape networks
-  for (let i = 0; i < config.teamSize; i++) {
-    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
-    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
-  }
-  ball.render();
-  goal0.render();
-  goal1.render();
+  policy = new Graph(10, windowHeight / 2, 10)
 }
+
 function draw() {
   if (pause) return;
   background(255);
-  logic(players, ball);
-  time += 1;
-  //Forward propagation
-  for (let i = 0; i < networks.length; i++) {
-    networks[i].forward(players[i].inputs(players, ball, goal1));
-    players[i].up(networks[i].outputs[0] * modifier);
-    players[i].side(networks[i].outputs[1] * modifier);
-    //Renders networks
-    for (let l = networks[i].layers.length - 1; l >= 0; l--) {
-      networks[i].layers[l].render((l + 1) * 30 + i * 200, 10, 60);
+  genome = playMatch(config, genome);
+  console.log('match')
+}
+
+function playMatch(config, genome = undefined) {
+  //Create players, balls, goals and networks
+  goal0 = new Goal(0, windowHeight / 2);
+  goal1 = new Goal(windowWidth, windowHeight / 2);
+  ball = new Ball(windowWidth / 2, windowHeight / 2);
+  let networks = [];
+  let players = [];
+  for (let i = 0; i < config.teamSize; i++) {
+    players[i] = new Player(windowWidth / 3, windowHeight / (config.teamSize + 1) * (i + 1), 0);
+    players[i + config.teamSize] = new Player(windowWidth * 2 / 3, windowHeight / (config.teamSize + 1) * (config.teamSize - i), 1);
+  }
+  if (!genome){
+    for (let i = 0; i < config.teamSize; i++) {
+      networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
+      networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
+    }
+  } else {
+    for (let i = 0; i < config.teamSize; i++) {
+      networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
+      networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
+      networks[i].genome = genome
+      networks[i + config.teamSize].genome = genome
+    }
+  }
+  //Play the match
+  let result = 0;
+  for (let time = 0; time < config.time || result != 0; time++) {
+    logic(players, ball);
+    for (let i = 0; i < networks.length; i++) {
+      networks[i].forward(players[i].inputs(players, ball, goal1));
+      players[i].up(networks[i].outputs[0] * modifier);
+      players[i].side(networks[i].outputs[1] * modifier);
     }
   }
   //crossOver best players
   let scores = players.map(player => player.s);
+  let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
+  let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
   if (result < 0) {
-    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
-    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = config.teamSize; i < config.teamSize * 2; i++) {
       let cross = crossOver(networks[female], networks[male]);
       networks[i].genome = cross;
     }
-    policy.input = players[male].s;
-    time = 0;
-    result = 0;
-    reset(players, ball);
   }
   else if (result > 0) {
-    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
-    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
     for (let i = 0; i < config.teamSize; i++) {
       let cross = crossOver(networks[female], networks[male]);
       networks[i].genome = cross;
     }
-    policy.input = players[male].s;
-    time = 0;
-    result = 0;
-    reset(players, ball);
   }
-  else if (time > config.time) {
-    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
-    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
+  else {
     for (let i = 0; i < config.teamSize * 2; i++) {
-      if (i != female & i != male) {
+      if (i != female && i != male) {
         let cross = crossOver(networks[female], networks[male]);
         networks[i].genome = cross;
       } else {
         networks[i].genome = networks[i].genome;
       }
     }
-    policy.input = players[male].s;
-    time = 0;
-    result = 0;
-    reset(players, ball);
   }
-  //Render objects
-  for (let i = 0; i < players.length; i++) {
-    players[i].render(i);
-  }
-  ball.render();
-  goal0.render();
-  goal1.render();
-  policy.render(10, windowHeight - 10, 5);
+  policy.input = Math.round(players[male].s);
+  return networks[male].genome;
 }
 
 function logic(players, ball) {
@@ -157,13 +139,13 @@ function crossOver(female, male) {
 }
 
 function keyTyped() {
-  if (keyCode === 32){
+  if (keyCode === 32) {
     pause = !pause;
   }
-  if (keyCode === 87){
+  if (keyCode === 87) {
     modifier += 10;
   }
-  if (keyCode === 83){
+  if (keyCode === 83) {
     modifier -= 10;
   }
 }
