@@ -166,4 +166,7 @@ function keyTyped() {
   if (keyCode === 83){
     modifier -= 10;
   }
+  if (keyCode === 13){
+    saveJSON(network.genome, "genome.json");
+  }
 }
