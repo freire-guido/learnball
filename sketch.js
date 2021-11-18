@@ -1,6 +1,6 @@
 const config = {
   teamSize: 2,
-  time: 200,
+  time: 500,
   shape: [4, 4, 2]
 }
 var policy = new Graph([0]);
@@ -11,7 +11,7 @@ var network;
 var result = 0;
 var time = 0;
 var pause = false;
-var modifier = 100
+var modifier = 50
 var bestGenome;
 var bestScore = 0;
 
@@ -40,14 +40,12 @@ function draw() {
   logic(players, ball);
   time += 1;
   network.forward(player.inputs(human, ball, goal0));
-  console.log('IN', network.layers[0].inputs[0]);
-  console.log('OUT', network.layers[0].outputs[0]);
   player.up(network.outputs[0] * modifier);
   player.side(network.outputs[1] * modifier);
-  human.up(keyIsDown(DOWN_ARROW) ? modifier/10 : 0);
-  human.up(keyIsDown(UP_ARROW) ? -modifier/10 : 0);
-  human.side(keyIsDown(RIGHT_ARROW) ? modifier/10 : 0);
-  human.side(keyIsDown(LEFT_ARROW) ? -modifier/10 : 0);
+  human.up(keyIsDown(DOWN_ARROW) ? 10 : 0);
+  human.up(keyIsDown(UP_ARROW) ? -10 : 0);
+  human.side(keyIsDown(RIGHT_ARROW) ? 10 : 0);
+  human.side(keyIsDown(LEFT_ARROW) ? -10: 0);
   player.render()
   human.render()
   for (let l = network.layers.length - 1; l >= 0; l--) {
@@ -130,5 +128,8 @@ function keyTyped() {
   }
   if (keyCode === 83) {
     modifier -= 10;
+  }
+  if (keyCode === 13){
+    saveJSON(network.genome, "genome.json");
   }
 }
