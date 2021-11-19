@@ -11,14 +11,14 @@ var genome = undefined;
 function setup() {
   windowHeight, windowWidth -= 50;
   createCanvas(windowWidth, windowHeight - 20);
-  policy = new Graph(10, windowHeight / 2, 10)
+  policy = new Graph();
 }
 
 function draw() {
   if (pause) return;
   background(255);
   genome = playMatch(config, genome);
-  console.log('match')
+  policy.render(10, windowHeight - 100, 5);
 }
 
 function playMatch(config, genome = undefined) {
