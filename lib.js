@@ -1,5 +1,5 @@
 class Graph {
-  constructor(ii) {
+  constructor(ii = []) {
     this.inputs = ii;
   }
   set input(input) {
@@ -9,12 +9,13 @@ class Graph {
     this.x = xx;
     this.y = yy;
     this.s = ss;
-    for (var i = 1; i < this.inputs.length; i++) {
-      strokeWeight(2);
-      line((i - 1) * this.s + this.x, -this.inputs[i - 1] + this.y, i * this.s + this.x, -this.inputs[i] + this.y);
+    stroke('black')
+    strokeWeight(2);
+    for (let i = 1; i < this.inputs.length; i++){
+      line(this.x + (i - 1) * this.s, this.y - this.inputs[i - 1], this.x + i * this.s, this.y - this.inputs[i]);
     }
     noStroke();
-    text(this.inputs[i - 1], i * this.s + this.x, -this.inputs[i - 1] + this.y);
+    text(this.inputs[this.inputs.length - 1], this.x + this.inputs.length * this.s, this.y - this.inputs[this.inputs.length - 1]);
   }
 }
 
