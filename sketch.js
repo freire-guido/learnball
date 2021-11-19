@@ -4,9 +4,10 @@ const config = {
   shape: [10, 10, 8, 2]
 }
 var policy;
+var bestScore = 0;
 var pause = false;
 var modifier = 50;
-var genome = undefined;
+var bestGenome = undefined;
 
 function setup() {
   windowHeight, windowWidth -= 50;
@@ -16,10 +17,15 @@ function setup() {
 
 function draw() {
   if (pause) return;
-  background(255);
-  genome = playMatch(config, genome);
+  let result = playMatch(config, bestGenome);
   let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
-  network.genome = genome;
+  if (result[1] > bestScore){
+    bestScore = result[1];
+    bestGenome = result[0];
+  }
+  network.genome = bestGenome;
+  policy.input = bestScore
+  background(255);
   network.render(500, 500, 100, 100)
   policy.render(10, windowHeight - 100, 5);
 }
@@ -84,8 +90,7 @@ function playMatch(config, genome = undefined) {
       }
     }
   }
-  policy.input = Math.round(players[male].s);
-  return networks[male].genome;
+  return [networks[male].genome, players[male].s];
 }
 
 function logic(players, ball) {
