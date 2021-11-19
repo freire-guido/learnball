@@ -57,7 +57,7 @@ class NLayer {
         this.biases = JSON.parse(JSON.stringify(Array.from(genome[0])));
         if (this.pos != 0) {
             for (let o = 0; o < this.weights.length; o++) {
-                if (random(100) < 8) {
+                if (random(100) < 1) {
                     for (let i = 0; i < this.weights[o].length; i++) {
                         this.weights[o][i] = random(-1, 1);
                     }
@@ -66,18 +66,18 @@ class NLayer {
             }
         }
     }
-    render(x, y, h) {
+    render(x, y, height, width) {
         this.x = x;
         this.y = y;
         this.r = 8;
         for (let o = 0; o < this.outputs.length; o++) {
-            let oY = h * o / (this.outputs.length - 1) + this.y;
+            let oY = height * o / (this.outputs.length - 1) + this.y;
             if (this.pos != 0) {
                 for (let i = 0; i < this.weights[o].length; i++) {
-                    let iY = h * i / (this.weights[o].length - 1) + this.y;
+                    let iY = height * i / (this.weights[o].length - 1) + this.y;
                     strokeWeight(abs(this.weights[o][i]));
                     stroke(126)
-                    line(this.x - 30, iY, this.x, oY);
+                    line(this.x - width, iY, this.x, oY);
                     strokeWeight(0);
                 }
             }
@@ -121,5 +121,10 @@ class NNetwork {
         });
         genome = JSON.parse(JSON.stringify(genome))
         return genome;
+    }
+    render(x, y, height, width) {
+        for (let l = this.layers.length - 1; l >= 0; l--) {
+            this.layers[l].render((l + 1) * width + x, 10 + y, height, width);
+        }
     }
 }

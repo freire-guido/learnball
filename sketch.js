@@ -1,7 +1,7 @@
 const config = {
-  teamSize: 2,
+  teamSize: 3,
   time: 10000,
-  shape: [4, 4, 2]
+  shape: [10, 10, 8, 2]
 }
 var policy;
 var pause = false;
@@ -18,6 +18,9 @@ function draw() {
   if (pause) return;
   background(255);
   genome = playMatch(config, genome);
+  let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
+  network.genome = genome;
+  network.render(500, 500, 100, 100)
   policy.render(10, windowHeight - 100, 5);
 }
 
@@ -61,20 +64,20 @@ function playMatch(config, genome = undefined) {
   let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
   if (result < 0) {
     for (let i = config.teamSize; i < config.teamSize * 2; i++) {
-      let cross = crossOver(networks[female], networks[male]);
+      let cross = crossOver(networks[female].genome, networks[male].genome);
       networks[i].genome = cross;
     }
   }
   else if (result > 0) {
     for (let i = 0; i < config.teamSize; i++) {
-      let cross = crossOver(networks[female], networks[male]);
+      let cross = crossOver(networks[female].genome, networks[male].genome);
       networks[i].genome = cross;
     }
   }
   else {
     for (let i = 0; i < config.teamSize * 2; i++) {
       if (i != female && i != male) {
-        let cross = crossOver(networks[female], networks[male]);
+        let cross = crossOver(networks[female].genome, networks[male].genome);
         networks[i].genome = cross;
       } else {
         networks[i].genome = networks[i].genome;
@@ -126,13 +129,13 @@ function reset(players, ball) {
   ball.y = windowHeight / 2;
 }
 
-//Merges a female and male network at a random cutoff, and returns the child genome
+//Merges a female and male genome at a random cutoff, and returns the child genome
 function crossOver(female, male) {
   let child = new Array(male.length);
-  for (let l = 0; l < female.genome.length; l++) {
-    let cutoff = round(random(male.genome[l].length));
-    let first = male.genome[l].slice(0, cutoff);
-    let second = female.genome[l].slice(cutoff);
+  for (let l = 0; l < female.length; l++) {
+    let cutoff = round(random(male[l].length));
+    let first = male[l].slice(0, cutoff);
+    let second = female[l].slice(cutoff);
     child[l] = first.concat(second);
   }
   return child;
