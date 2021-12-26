@@ -10,6 +10,7 @@ const config = {
 var policy;
 var bestScore = 0;
 var pause = false;
+var render = false;
 var bestGenome = undefined;
 
 function setup() {
@@ -17,11 +18,11 @@ function setup() {
   policy = new Graph();
 }
 
-function draw() {
+async function draw() {
   if (pause) return;
-  let result = playMatch(config, bestGenome);
+  let result = await playMatch(config, bestGenome);
   let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
-  if (result[1] > bestScore){
+  if (result[1] > bestScore) {
     bestScore = result[1];
     bestGenome = result[0];
   }
@@ -32,7 +33,7 @@ function draw() {
   policy.render(10, config.height - 100, 5);
 }
 
-function playMatch(config, genome = undefined) {
+async function playMatch(config, genome = undefined) {
   //Create players, balls, goals and networks
   goal0 = new Goal(0, config.height / 2);
   goal1 = new Goal(config.width, config.height / 2);
@@ -43,7 +44,7 @@ function playMatch(config, genome = undefined) {
     players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
     players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
   }
-  if (!genome){
+  if (!genome) {
     for (let i = 0; i < config.teamSize; i++) {
       networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
       networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
@@ -64,6 +65,17 @@ function playMatch(config, genome = undefined) {
       networks[i].forward(players[i].inputs(players, ball, goal1));
       players[i].up(networks[i].outputs[0] * config.modifier);
       players[i].side(networks[i].outputs[1] * config.modifier);
+    }
+    if (render) {
+      await sleep(20);
+      background(255);
+      for (let i = 0; render && i < networks.length; i++) {
+        networks[i].render(i * (config.width / networks.length), 10, 60, 30);
+        players[i].render(i);
+      }
+      ball.render();
+      goal0.render();
+      goal1.render();
     }
   }
   //crossOver best players
@@ -152,13 +164,10 @@ function keyTyped() {
   if (keyCode === 32) {
     pause = !pause;
   }
-  if (keyCode === 87) {
-    config.modifier += 10;
+  if (keyCode === 13) {
+    render = !render;
   }
-  if (keyCode === 83) {
-    config.modifier -= 10;
-  }
-  if (keyCode === 13){
+  if (keyCode === 8) {
     saveJSON(network.genome, "genome.json");
   }
 }

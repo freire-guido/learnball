@@ -100,3 +100,7 @@ function Goal(x, y) {
     rect(this.x, this.y, 40, 160);
   }
 }
+
+async function sleep(ms){
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
