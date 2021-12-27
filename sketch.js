@@ -12,34 +12,62 @@ var bestScore = 0;
 var pause = false;
 var render = false;
 var bestGenome = undefined;
+var time = 0;
+
+var { goal0, goal1, ball, networks, players } = initializeMatch();
 
 function setup() {
   createCanvas(config.width, config.height - 20);
   policy = new Graph();
 }
 
-async function draw() {
+function draw() {
   if (pause) return;
-  let result = await playMatch(config, bestGenome);
-  let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
-  if (result[1] > bestScore) {
-    bestScore = result[1];
-    bestGenome = result[0];
+  if (render) {
+    if (time == 0) {
+      for (let i = 0; i < config.teamSize; i++) {
+        players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
+        players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
+      }
+      for (let i = 0; i < config.teamSize; i++) {
+        networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
+        networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
+        networks[i].genome = bestGenome;
+        networks[i + config.teamSize].genome = bestGenome;
+      }
+    }
+    logic(players, ball);
+    background(255);
+    for (let i = 0; i < networks.length; i++) {
+      networks[i].forward(players[i].inputs(players, ball, goal1));
+      players[i].up(networks[i].outputs[0] * config.modifier);
+      players[i].side(networks[i].outputs[1] * config.modifier);
+      networks[i].render(i * (config.width / networks.length), 10, 60, 30);
+      players[i].render(i);
+    }
+    ball.render();
+    goal0.render();
+    goal1.render();
+    time++
+  } else {
+    time = 0;
+    let result = playMatch(config, bestGenome);
+    let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
+    if (result[1] > bestScore) {
+      bestScore = result[1];
+      bestGenome = result[0];
+    }
+    network.genome = bestGenome;
+    policy.input = bestScore
+    background(255);
+    network.render(500, 500, 100, 100)
+    policy.render(10, config.height - 100, 5);
   }
-  network.genome = bestGenome;
-  policy.input = bestScore
-  background(255);
-  network.render(500, 500, 100, 100)
-  policy.render(10, config.height - 100, 5);
 }
 
-async function playMatch(config, genome = undefined) {
+function playMatch(config, genome = undefined) {
   //Create players, balls, goals and networks
-  goal0 = new Goal(0, config.height / 2);
-  goal1 = new Goal(config.width, config.height / 2);
-  ball = new Ball(config.width / 2, config.height / 2);
-  let networks = [];
-  let players = [];
+  let { goal0, goal1, ball, networks, players } = initializeMatch();
   for (let i = 0; i < config.teamSize; i++) {
     players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
     players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
@@ -67,7 +95,6 @@ async function playMatch(config, genome = undefined) {
       players[i].side(networks[i].outputs[1] * config.modifier);
     }
     if (render) {
-      await sleep(20);
       background(255);
       for (let i = 0; render && i < networks.length; i++) {
         networks[i].render(i * (config.width / networks.length), 10, 60, 30);
@@ -107,6 +134,19 @@ async function playMatch(config, genome = undefined) {
   return [networks[male].genome, players[male].s];
 }
 
+function initializeMatch() {
+  let goal0 = new Goal(0, config.height / 2);
+  let goal1 = new Goal(config.width, config.height / 2);
+  let ball = new Ball(config.width / 2, config.height / 2);
+  let networks = [];
+  let players = [];
+  for (let i = 0; i < config.teamSize; i++) {
+    players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
+    players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
+  }
+  return { goal0: goal0, goal1: goal1, ball: ball, networks: networks, players: players };
+}
+
 function logic(players, ball) {
   //Player-ball collision logic
   for (let i = 0; i < players.length; i++) {
@@ -119,7 +159,7 @@ function logic(players, ball) {
     }
     //Reward staying in the field
     if (players[i].x < config.width && players[i].x > 0 && players[i].y < config.height && players[i].y > 0) {
-      players[i].s += 0.05;
+      players[i].s += 0.01;
     }
   }
   //Goal detection logic
