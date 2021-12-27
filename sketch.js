@@ -51,14 +51,14 @@ function draw() {
     time++
   } else {
     time = 0;
-    let result = playMatch(config, bestGenome);
-    let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
-    if (result[1] > bestScore) {
-      bestScore = result[1];
-      bestGenome = result[0];
+    let { genome, score } = playMatch(config, bestGenome);
+    if (score > bestScore) {
+      bestScore = score;
+      bestGenome = genome;
+      policy.input = bestScore
     }
+    let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
     network.genome = bestGenome;
-    policy.input = bestScore
     background(255);
     network.render(500, 500, 100, 100)
     policy.render(10, config.height - 100, 5);
@@ -94,16 +94,6 @@ function playMatch(config, genome = undefined) {
       players[i].up(networks[i].outputs[0] * config.modifier);
       players[i].side(networks[i].outputs[1] * config.modifier);
     }
-    if (render) {
-      background(255);
-      for (let i = 0; render && i < networks.length; i++) {
-        networks[i].render(i * (config.width / networks.length), 10, 60, 30);
-        players[i].render(i);
-      }
-      ball.render();
-      goal0.render();
-      goal1.render();
-    }
   }
   //crossOver best players
   let scores = players.map(player => player.s);
@@ -131,7 +121,7 @@ function playMatch(config, genome = undefined) {
       }
     }
   }
-  return [networks[male].genome, players[male].s];
+  return { genome: networks[male].genome, score: players[male].s };
 }
 
 function initializeMatch() {
