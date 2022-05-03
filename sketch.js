@@ -1,6 +1,6 @@
 const config = {
   teamSize: 3,
-  time: 10000,
+  time: 1000,
   shape: [10, 10, 8, 2],
   modifier: 50,
   height: 1020,
@@ -13,10 +13,10 @@ var pause = false;
 var render = false;
 var bestGenome = undefined;
 var time = 0;
-
-var { goal0, goal1, ball, networks, players } = initializeMatch();
+let goal0, goal1, ball, networks, players;
 
 function setup() {
+  ({ goal0, goal1, ball, networks, players } = initializeMatch());
   createCanvas(config.width, config.height - 20);
   policy = new Graph();
 }
@@ -24,18 +24,6 @@ function setup() {
 function draw() {
   if (pause) return;
   if (render) {
-    if (time == 0) {
-      for (let i = 0; i < config.teamSize; i++) {
-        players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
-        players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
-      }
-      for (let i = 0; i < config.teamSize; i++) {
-        networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
-        networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
-        networks[i].genome = bestGenome;
-        networks[i + config.teamSize].genome = bestGenome;
-      }
-    }
     logic(players, ball);
     background(255);
     for (let i = 0; i < networks.length; i++) {
@@ -55,7 +43,7 @@ function draw() {
     if (score > bestScore) {
       bestScore = score;
       bestGenome = genome;
-      policy.input = bestScore
+      policy.inputs.push(bestScore.toPrecision(2));
     }
     let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
     network.genome = bestGenome;
@@ -68,21 +56,9 @@ function draw() {
 function playMatch(config, genome = undefined) {
   //Create players, balls, goals and networks
   let { goal0, goal1, ball, networks, players } = initializeMatch();
-  for (let i = 0; i < config.teamSize; i++) {
-    players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
-    players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
-  }
-  if (!genome) {
-    for (let i = 0; i < config.teamSize; i++) {
-      networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
-      networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
-    }
-  } else {
-    for (let i = 0; i < config.teamSize; i++) {
-      networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
-      networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
+  if (genome) {
+    for (let i = 0; i < networks.length; i++) {
       networks[i].genome = genome
-      networks[i + config.teamSize].genome = genome
     }
   }
   //Play the match
@@ -90,7 +66,11 @@ function playMatch(config, genome = undefined) {
   for (let time = 0; time < config.time || result != 0; time++) {
     logic(players, ball);
     for (let i = 0; i < networks.length; i++) {
-      networks[i].forward(players[i].inputs(players, ball, goal1));
+      if (i < networks.length / 2) {
+        networks[i].forward(players[i].inputs(players, ball, goal1));
+      } else {
+        networks[i].forward(players[i].inputs(players, ball, goal0));
+      }
       players[i].up(networks[i].outputs[0] * config.modifier);
       players[i].side(networks[i].outputs[1] * config.modifier);
     }
@@ -133,6 +113,10 @@ function initializeMatch() {
   for (let i = 0; i < config.teamSize; i++) {
     players[i] = new Player(config.width / 3, config.height / (config.teamSize + 1) * (i + 1), 0);
     players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
+  }
+  for (let i = 0; i < config.teamSize; i++) {
+    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
+    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
   }
   return { goal0: goal0, goal1: goal1, ball: ball, networks: networks, players: players };
 }
@@ -191,7 +175,7 @@ function crossOver(female, male) {
 }
 
 function keyTyped() {
-  if (keyCode === 32) {
+  if (keyCode === 32) { //spacebar
     pause = !pause;
   }
   if (keyCode === 13) {
