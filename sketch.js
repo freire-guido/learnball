@@ -16,7 +16,6 @@ var time = 0;
 let goal0, goal1, ball, networks, players;
 
 function setup() {
-  ({ goal0, goal1, ball, networks, players } = initializeMatch());
   createCanvas(config.width, config.height - 20);
   policy = new Graph();
 }
@@ -24,19 +23,27 @@ function setup() {
 function draw() {
   if (pause) return;
   if (render) {
-    logic(players, ball);
-    background(255);
-    for (let i = 0; i < networks.length; i++) {
-      networks[i].forward(players[i].inputs(players, ball, goal1));
-      players[i].up(networks[i].outputs[0] * config.modifier);
-      players[i].side(networks[i].outputs[1] * config.modifier);
-      networks[i].render(i * (config.width / networks.length), 10, 60, 30);
-      players[i].render(i);
+    if (time < config.time) {
+      if (time == 0) {
+        ({ goal0, goal1, ball, networks, players } = initializeMatch(bestGenome))
+      }
+      logic(players, ball);
+      background(255);
+      for (let i = 0; i < networks.length; i++) {
+        networks[i].forward(players[i].inputs(players, ball, goal1));
+        players[i].up(networks[i].outputs[0] * config.modifier);
+        players[i].side(networks[i].outputs[1] * config.modifier);
+        networks[i].render(i * (config.width / networks.length), 10, 60, 30);
+        players[i].render(i);
+      }
+      ball.render();
+      goal0.render();
+      goal1.render();
+      time++;
+    } else {
+      reset(players, ball);
+      time = 0;
     }
-    ball.render();
-    goal0.render();
-    goal1.render();
-    time++
   } else {
     time = 0;
     let { genome, score } = playMatch(config, bestGenome);
@@ -55,7 +62,7 @@ function draw() {
 
 function playMatch(config, genome = undefined) {
   //Create players, balls, goals and networks
-  let { goal0, goal1, ball, networks, players } = initializeMatch();
+  let { goal0, goal1, ball, networks, players } = initializeMatch(genome);
   if (genome) {
     for (let i = 0; i < networks.length; i++) {
       networks[i].genome = genome
@@ -104,7 +111,7 @@ function playMatch(config, genome = undefined) {
   return { genome: networks[male].genome, score: players[male].s };
 }
 
-function initializeMatch() {
+function initializeMatch(genome = undefined) {
   let goal0 = new Goal(0, config.height / 2);
   let goal1 = new Goal(config.width, config.height / 2);
   let ball = new Ball(config.width / 2, config.height / 2);
@@ -117,6 +124,10 @@ function initializeMatch() {
   for (let i = 0; i < config.teamSize; i++) {
     networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
     networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
+    if (genome) {
+        networks[i].genome = genome;
+        networks[i + config.teamSize].genome = genome;
+    }
   }
   return { goal0: goal0, goal1: goal1, ball: ball, networks: networks, players: players };
 }
