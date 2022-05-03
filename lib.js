@@ -28,13 +28,13 @@ class Player {
     this.s = 0;
     this.kick = false;
   }
-  up = (f) => {
+  up(f) {
     this.y += f;
   }
-  side = (s) => {
+  side(s) {
     this.x += s;
   }
-  render = (index = undefined) => {
+  render(index = undefined) {
     if (this.t == 1) {
       fill(0, 0, 255);
     }
@@ -49,7 +49,7 @@ class Player {
       text(index, this.x, this.y + (this.r - 20) / 2);
     }
   }
-  inputs = (players, ball, goal) => {
+  inputs(players, ball, goal) {
     let inputs = [];
     let dist = [];
     if (this.t == 0) {
@@ -77,7 +77,7 @@ class Ball {
     this.x = x;
     this.y = y;
   }
-  collision = (dx, dy, kick) => {
+  collision(dx, dy, kick) {
     if (kick) {
       this.x -= dx * 4;
       this.y -= dy * 4;
@@ -87,7 +87,7 @@ class Ball {
       this.y -= dy;
     }
   }
-  render = () => {
+  render() {
     fill(0, 255, 0);
     ellipse(this.x, this.y, this.r * 2);
   }
@@ -97,6 +97,7 @@ function Goal(x, y) {
   this.x = x;
   this.y = y;
   this.render = () => {
+    rectMode(CENTER);
     rect(this.x, this.y, 40, 160);
   }
 }
