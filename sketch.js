@@ -43,7 +43,7 @@ function draw() {
     if (score > bestScore) {
       bestScore = score;
       bestGenome = genome;
-      policy.inputs.push(bestScore.toPrecision(2));
+      policy.inputs.push(bestScore.toPrecision(3));
     }
     let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
     network.genome = bestGenome;

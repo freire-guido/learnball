@@ -2,14 +2,14 @@ class Graph {
   constructor(ii = []) {
     this.inputs = ii;
   }
-  set input(input) {
-    this.inputs.push(input);
-  }
   render(xx, yy, ss) {
     this.x = xx;
     this.y = yy;
     this.s = ss;
-    stroke('black')
+    textSize(20);
+    textAlign(CENTER);
+    fill(0, 255, 0);
+    stroke('black');
     strokeWeight(2);
     for (let i = 1; i < this.inputs.length; i++){
       line(this.x + (i - 1) * this.s, this.y - this.inputs[i - 1], this.x + i * this.s, this.y - this.inputs[i]);
