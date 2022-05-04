@@ -1,8 +1,8 @@
 const config = {
   teamSize: 3,
-  time: 1000,
+  time: 500,
   shape: [10, 10, 8, 2],
-  modifier: 50,
+  modifier: 20,
   height: 1020,
   width: 1360
 }
@@ -16,7 +16,7 @@ var time = 0;
 let goal0, goal1, ball, networks, players;
 
 function setup() {
-  createCanvas(config.width, config.height - 20);
+  createCanvas(windowWidth - 100, windowHeight - 50);
   policy = new Graph();
 }
 
@@ -52,10 +52,10 @@ function draw() {
       bestGenome = genome;
       policy.inputs.push(bestScore.toPrecision(3));
     }
-    let network = new NNetwork([1, 1, 1, 1, 1, 1], config.shape);
+    let network = new NNetwork([0], config.shape);
     network.genome = bestGenome;
     background(255);
-    network.render(500, 500, 100, 100)
+    network.render(config.width / 2, config.height / 2, 100, 100)
     policy.render(10, config.height - 100, 5);
   }
 }
@@ -144,7 +144,7 @@ function logic(players, ball) {
     }
     //Reward staying in the field
     if (players[i].x < config.width && players[i].x > 0 && players[i].y < config.height && players[i].y > 0) {
-      players[i].s += 0.01;
+      players[i].s += 0.001;
     }
   }
   //Goal detection logic

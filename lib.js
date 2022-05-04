@@ -15,7 +15,7 @@ class Graph {
       line(this.x + (i - 1) * this.s, this.y - this.inputs[i - 1], this.x + i * this.s, this.y - this.inputs[i]);
     }
     noStroke();
-    text(this.inputs[this.inputs.length - 1], this.x + this.inputs.length * this.s, this.y - this.inputs[this.inputs.length - 1]);
+    text((this.inputs[this.inputs.length - 1]).toPrecision(5), this.x + this.inputs.length * this.s, this.y - this.inputs[this.inputs.length - 1]);
   }
 }
 
@@ -51,19 +51,19 @@ class Player {
   }
   inputs(players, ball, goal) {
     let inputs = [];
-    let dist = [];
+    let distances = [];
     if (this.t == 0) {
-      players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))); });
-      inputs.push(players[dist.indexOf([...dist].sort()[0]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[0]) + players.length / 2].y - this.y);
-      dist = [];
-      players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))); });
-      inputs.push(players[dist.indexOf([...dist].sort()[1])].x - this.x, players[dist.indexOf([...dist].sort()[1])].y - this.y);
+      players.slice(players.length / 2).forEach(player => { distances.push(dist(this.x, this.y, player.x, player.y)); });
+      inputs.push(players[distances.indexOf([...distances].sort()[0]) + players.length / 2].x - this.x, players[distances.indexOf([...distances].sort()[0]) + players.length / 2].y - this.y);
+      distances = [];
+      players.slice(0, players.length / 2).forEach(player => { distances.push(dist(this.x, this.y, player.x, player.y)); });
+      inputs.push(players[distances.indexOf([...distances].sort()[1])].x - this.x, players[distances.indexOf([...distances].sort()[1])].y - this.y);
     } else {
-      players.slice(0, players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))); });
-      inputs.push(players[dist.indexOf([...dist].sort()[0])].x - this.x, players[dist.indexOf([...dist].sort()[0])].y - this.y);
-      dist = [];
-      players.slice(players.length / 2).forEach(player => { dist.push(sqrt(sq(this.x - player.x) + sq(this.y - player.y))); });
-      inputs.push(players[dist.indexOf([...dist].sort()[1]) + players.length / 2].x - this.x, players[dist.indexOf([...dist].sort()[1]) + players.length / 2].y - this.y);
+      players.slice(0, players.length / 2).forEach(player => { distances.push(dist(this.x, this.y, player.x, player.y)); });
+      inputs.push(players[distances.indexOf([...distances].sort()[0])].x - this.x, players[distances.indexOf([...distances].sort()[0])].y - this.y);
+      distances = [];
+      players.slice(players.length / 2).forEach(player => { distances.push(dist(this.x, this.y, player.x, player.y)); });
+      inputs.push(players[distances.indexOf([...distances].sort()[1]) + players.length / 2].x - this.x, players[distances.indexOf([...distances].sort()[1]) + players.length / 2].y - this.y);
     }
     inputs.push(goal.x - this.x, goal.y - this.y);
     inputs.push(ball.x - this.x, ball.y - this.y);
