@@ -8,7 +8,7 @@ class NLayer {
         if (randomize) {
             for (let o = 0; o < this.weights.length; o++) {
                 this.weights[o] = new Array(this.inputs.length);
-                this.biases[o] = random(-1, 1);
+                this.biases[o] = 0;
                 for (let i = 0; i < this.inputs.length; i++) {
                     this.weights[o][i] = random(-1, 1);
                 }
@@ -33,7 +33,7 @@ class NLayer {
                 for (let i = 0; i < inputs.length; i++) {
                     this.outputs[o] += inputs[i] * this.weights[o][i];
                 }
-                //this.outputs[o] += this.biases[o];
+                this.outputs[o] += this.biases[o];
                 this.outputs[o] = activate(this.outputs[o]);
             }
         }
@@ -94,11 +94,11 @@ class NLayer {
 }
 
 class NNetwork {
-    constructor(inputs, sizes) {
+    constructor(inputs, sizes, randomize = false) {
         this.layers = [];
-        this.layers[0] = new NLayer(inputs.length, inputs, 0);
+        this.layers[0] = new NLayer(inputs.length, inputs, 0, false);
         sizes.forEach((size, index) => {
-            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1, true);
+            this.layers[index + 1] = new NLayer(size, this.layers[index].outputs, index + 1, randomize);
         })
     }
     forward(inputs) {

@@ -50,7 +50,7 @@ function draw() {
     if (score > bestScore) {
       bestScore = score;
       bestGenome = genome;
-      policy.inputs.push(bestScore.toPrecision(3));
+      policy.inputs.push(bestScore);
     }
     let network = new NNetwork([0], config.shape);
     network.genome = bestGenome;
@@ -122,8 +122,8 @@ function initializeMatch(genome = undefined) {
     players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
   }
   for (let i = 0; i < config.teamSize; i++) {
-    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
-    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
+    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape, true);
+    networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape, true);
     if (genome) {
         networks[i].genome = genome;
         networks[i + config.teamSize].genome = genome;
