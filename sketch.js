@@ -74,7 +74,7 @@ function playMatch(config, genome = undefined) {
     logic(players, ball);
     for (let i = 0; i < networks.length; i++) {
       if (i < networks.length / 2) {
-        networks[i].forward(players[i].inputs(players, ball, goal1));
+        networks[i].predict(players[i].inputs([players, ball, goal1]));
       } else {
         networks[i].forward(players[i].inputs(players, ball, goal0));
       }
@@ -122,7 +122,13 @@ function initializeMatch(genome = undefined) {
     players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
   }
   for (let i = 0; i < config.teamSize; i++) {
-    networks[i] = new NNetwork(players[i].inputs(players, ball, goal1), config.shape);
+    let laySetup = [tf.layers.dense({units: 10, inputShape: [players[i].inputs(players, ball, goal1).length]})]
+    for (let l = 0; l < config.shape.length; l++) {
+      laySetup.push(tf.layers.dense({units: config.shape[l], activation: 'relu'}))
+    }
+    networks[i] = tf.sequential({
+      layers: laySetup
+    });
     networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
     if (genome) {
         networks[i].genome = genome;
