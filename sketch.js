@@ -30,11 +30,16 @@ function draw() {
       logic(players, ball);
       background(255);
       for (let i = 0; i < networks.length; i++) {
-        networks[i].forward(players[i].inputs(players, ball, goal1));
-        players[i].up(networks[i].outputs[0] * config.modifier);
-        players[i].side(networks[i].outputs[1] * config.modifier);
-        networks[i].render(i * (config.width / networks.length), 10, 60, 30);
-        players[i].render(i);
+        if (i < networks.length / 2) {
+          let output = tf.sigmoid(networks[i].predict(tf.tensor2d([players[i].inputs(players, ball, goal1)]))).dataSync();
+          players[i].up(output[0] * config.modifier);
+          players[i].side(output[1] * config.modifier);
+        } else {
+          networks[i].forward(players[i].inputs(players, ball, goal0));
+          players[i].up(networks[i].outputs[0] * config.modifier);
+          players[i].side(networks[i].outputs[1] * config.modifier);
+        }
+        players[i].render();
       }
       ball.render();
       goal0.render();
@@ -74,18 +79,22 @@ function playMatch(config, genome = undefined) {
     logic(players, ball);
     for (let i = 0; i < networks.length; i++) {
       if (i < networks.length / 2) {
-        networks[i].predict(players[i].inputs([players, ball, goal1]));
+        // let inputs = players[i].inputs(players, ball, goal1);
+        let output = tf.sigmoid(networks[i].predict(tf.tensor2d([players[i].inputs(players, ball, goal1)]))).dataSync();
+        players[i].up(output[0] * config.modifier);
+        players[i].side(output[1] * config.modifier);
       } else {
         networks[i].forward(players[i].inputs(players, ball, goal0));
+        players[i].up(networks[i].outputs[0] * config.modifier);
+        players[i].side(networks[i].outputs[1] * config.modifier);
       }
-      players[i].up(networks[i].outputs[0] * config.modifier);
-      players[i].side(networks[i].outputs[1] * config.modifier);
     }
   }
   //crossOver best players
-  let scores = players.map(player => player.s);
-  let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
-  let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
+  var scores = players.map(player => player.s);
+  var male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
+  var female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
+  console.log()
   if (result < 0) {
     for (let i = config.teamSize; i < config.teamSize * 2; i++) {
       let cross = crossOver(networks[female].genome, networks[male].genome);
@@ -122,13 +131,15 @@ function initializeMatch(genome = undefined) {
     players[i + config.teamSize] = new Player(config.width * 2 / 3, config.height / (config.teamSize + 1) * (config.teamSize - i), 1);
   }
   for (let i = 0; i < config.teamSize; i++) {
-    let laySetup = [tf.layers.dense({units: 10, inputShape: [players[i].inputs(players, ball, goal1).length]})]
+    let inputSize = players[i].inputs(players, ball, goal1).length;
+    let laySetup = [tf.layers.dense({units: inputSize, inputShape: [inputSize]})];
     for (let l = 0; l < config.shape.length; l++) {
       laySetup.push(tf.layers.dense({units: config.shape[l], activation: 'relu'}))
     }
     networks[i] = tf.sequential({
       layers: laySetup
     });
+    networks[i].compile({optimizer: 'adam', loss: 'meanSquaredError'});
     networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape);
     if (genome) {
         networks[i].genome = genome;
