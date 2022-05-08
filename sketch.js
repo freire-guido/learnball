@@ -30,7 +30,11 @@ function draw() {
       logic(players, ball);
       background(255);
       for (let i = 0; i < networks.length; i++) {
-        networks[i].forward(players[i].inputs(players, ball, goal1));
+        if (i < networks.length / 2) {
+          networks[i].forward(players[i].inputs(players, ball, goal1));
+        } else {
+          networks[i].forward(players[i].inputs(players, ball, goal0));
+        }
         players[i].up(networks[i].outputs[0] * config.modifier);
         players[i].side(networks[i].outputs[1] * config.modifier);
         networks[i].render(i * (config.width / networks.length), 10, 60, 30);
