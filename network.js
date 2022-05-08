@@ -55,13 +55,17 @@ class NLayer {
     set genome(genome) {
         this.weights = JSON.parse(JSON.stringify(Array.from(genome.slice(1))));
         this.biases = JSON.parse(JSON.stringify(Array.from(genome[0])));
+    }
+    mutate(prob, biases = true) {
         if (this.pos != 0) {
             for (let o = 0; o < this.weights.length; o++) {
-                if (random(100) < 1) {
+                if (random(100) < prob) {
                     for (let i = 0; i < this.weights[o].length; i++) {
                         this.weights[o][i] = random(-1, 1);
                     }
-                    this.biases[o] = random(-1, 1);
+                    if (biases) {
+                        this.biases[o] = random(-1, 1);
+                    }
                 }
             }
         }
@@ -126,5 +130,10 @@ class NNetwork {
         for (let l = this.layers.length - 1; l >= 0; l--) {
             this.layers[l].render((l + 1) * width + x, 10 + y, height, width);
         }
+    }
+    mutate(prob, biases = true) {
+        this.layers.forEach((layer) => {
+            layer.mutate(prob, biases)
+        })
     }
 }
