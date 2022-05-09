@@ -1,7 +1,7 @@
 const config = {
-  teamSize: 3,
-  time: 500,
-  shape: [10, 10, 8, 2],
+  teamSize: 2,
+  time: 1000,
+  shape: [10, 10, 2],
   modifier: 20,
   height: 1020,
   width: 1360,
@@ -9,7 +9,7 @@ const config = {
 }
 
 var game;
-var trial = 1;
+var epsilon = 0;
 
 var policy;
 var pause = false;
@@ -28,6 +28,9 @@ function draw() {
     if (time < config.time) {
       if (time == 0) {
         game = new Game(config, bestGenome);
+        for (let i = 0; i < game.networks.length / 2; i++) {
+          game.networks[i].mutate(80);
+        }
       }
       game.step()
       background(255);
@@ -39,21 +42,29 @@ function draw() {
     }
   } else {
     time = 0;
-    let games = Array(Math.pow(2, config.batch - 1)).fill().map(x => (new Game(config, bestGenome, 0.5 * trial)))
-    games.forEach(game => {game.step(config.time)});
+    let games = Array(Math.pow(2, config.batch - 1)).fill().map(x => (new Game(config, bestGenome, epsilon)))
+    games.forEach(game => {
+      for (let i = 0; i < game.networks.length / 2; i++) {
+        game.networks[i].mutate(80);
+      }
+      game.step(config.time);
+    });
     for (let b = games.length / 2; b >= 1; b /= 2) {
       for (let i = 0; i < b; i++) {
-        games[i] = new Game(config, crossOver(games[2*i].best().network.genome, games[2*i + 1].best().network.genome), (0.5 * trial) / (i + 2));
+        games[i] = new Game(config, games[2*i].best().network.genome);
+        for (let n = 0; n < games[i].networks.length / 2; n++) {
+          games[i].networks[n].genome = games[2*i + 1].best().network.genome
+        }
         games[i].step(config.time);
       }
     }
     let batchBest = games[0].best()
-    if (batchBest.score > policy.inputs[policy.inputs.length - 1]) {
+    if (batchBest.score > policy.inputs[policy.inputs.length - 1] || epsilon >= 100) {
       policy.inputs.push(batchBest.score);
       bestGenome = batchBest.network.genome;
-      trial = 1;
+      epsilon = 0;
     } else {
-      trial++
+      epsilon += 0.05;
     }
     background(255);
     let net = new NNetwork(0, config.shape);
@@ -61,6 +72,8 @@ function draw() {
     net.render(config.width / 2 - 50, config.height / 2, 100, 100);
     batchBest.network.render(config.width / 2 - 40, config.height / 4, 80, 80)
     policy.render(10, config.height - 100, 5);
+    textAlign(LEFT)
+    text(epsilon, 20, 20);
   }
 }
 

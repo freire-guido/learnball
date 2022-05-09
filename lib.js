@@ -103,7 +103,7 @@ function Goal(x, y) {
 }
 
 class Game {
-  constructor({ teamSize, time, shape, modifier, height, width }, genome = undefined, mutation = 0) {
+  constructor({ teamSize, time, shape, modifier, height, width, batch }, genome = undefined, mutation = 0) {
     this.modifier = modifier
     this.goal0 = new Goal(0, height / 2);
     this.goal1 = new Goal(width, height / 2);
