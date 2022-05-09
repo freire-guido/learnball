@@ -103,7 +103,7 @@ function Goal(x, y) {
 }
 
 class Game {
-  constructor({ teamSize, time, shape, modifier, height, width }, genome = undefined) {
+  constructor({ teamSize, time, shape, modifier, height, width }, genome = undefined, mutation = 0) {
     this.modifier = modifier
     this.goal0 = new Goal(0, height / 2);
     this.goal1 = new Goal(width, height / 2);
@@ -119,15 +119,15 @@ class Game {
       this.networks[i + teamSize] = new NNetwork(this.players[i + teamSize].inputs(this.players, this.ball, this.goal0), shape, true);
       if (genome) {
         this.networks[i].genome = genome;
-        this.networks[i].mutate(10, false);
+        this.networks[i].mutate(mutation, false);
         this.networks[i + teamSize].genome = genome;
-        this.networks[i + teamSize].mutate(10, false);
+        this.networks[i + teamSize].mutate(mutation, false);
       }
     }
   }
   step(steps = 1) {
     for (let s = 0; s < steps; s++) {
-      logic(players, ball, goal0, goal1);
+      logic(this.players, this.ball, this.goal0, this.goal1);
       for (let i = 0; i < this.networks.length; i++) {
         if (i < this.networks.length / 2) {
           this.networks[i].forward(this.players[i].inputs(this.players, this.ball, this.goal1));
@@ -139,11 +139,34 @@ class Game {
       }
     }
   }
-  bestNetworks() {
-    let scores = players.map(player => player.s);
-    let male = scores.indexOf([...scores].sort(function (a, b) { return b - a })[0]);
-    let female = scores.indexOf([...scores].sort(function (a, b) { return b - a })[1]);
-    return { male: male, female: female}
+  reset(height, width) {
+    for (let i = 0; i < this.players.length; i++) {
+      if (this.players[i].t == 0) {
+        this.players[i].x = width / 3;
+        this.players[i].y = height / (this.players.length / 2 + 1) * (i + 1);
+        this.players[i].s = 0;  
+      } else {
+        this.players[i].x = width * 2 / 3;
+        this.players[i].y = height / (this.teamSize + 1) * (this.teamSize - i);
+        this.players[i].s = 0;
+      }
+    }
+    this.ball.x = width / 2;
+    this.ball.y = height / 2;
+  }
+  best() {
+    let scores = this.players.map(player => player.s);
+    let scoresSorted = [...scores].sort((a, b) => { return b - a })
+    return { score: scoresSorted[0], network: this.networks[scores.indexOf(scoresSorted[0])] }
+  }
+  render(height, width) {
+    for (let i = 0; i < this.networks.length; i++) {
+      this.networks[i].render(i * (width / this.networks.length), 60, 60, 30);
+      this.players[i].render(i);
+    }
+    this.ball.render();
+    this.goal0.render();
+    this.goal1.render();
   }
   #logic(players, ball, goal0, goal1) {
     //Player-ball collision logic

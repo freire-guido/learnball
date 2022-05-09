@@ -4,20 +4,22 @@ const config = {
   shape: [10, 10, 8, 2],
   modifier: 20,
   height: 1020,
-  width: 1360
+  width: 1360,
+  batch: 4
 }
 
+var game;
+var trial = 1;
+
 var policy;
-var bestScore = 0;
 var pause = false;
 var render = false;
 var bestGenome = undefined;
 var time = 0;
-let goal0, goal1, ball, networks, players;
 
 function setup() {
-  createCanvas(windowWidth - 100, windowHeight - 50);
-  policy = new Graph();
+  createCanvas(config.width, config.height);
+  policy = new Graph([0])
 }
 
 function draw() {
@@ -25,41 +27,39 @@ function draw() {
   if (render) {
     if (time < config.time) {
       if (time == 0) {
-        ({ goal0, goal1, ball, networks, players } = initializeMatch(bestGenome))
+        game = new Game(config, bestGenome);
       }
-      logic(players, ball);
+      game.step()
       background(255);
-      for (let i = 0; i < networks.length; i++) {
-        if (i < networks.length / 2) {
-          networks[i].forward(players[i].inputs(players, ball, goal1));
-        } else {
-          networks[i].forward(players[i].inputs(players, ball, goal0));
-        }
-        players[i].up(networks[i].outputs[0] * config.modifier);
-        players[i].side(networks[i].outputs[1] * config.modifier);
-        networks[i].render(i * (config.width / networks.length), 10, 60, 30);
-        players[i].render(i);
-      }
-      ball.render();
-      goal0.render();
-      goal1.render();
+      game.render(config.height, config.width);
       time++;
     } else {
-      reset(players, ball);
+      game.reset()
       time = 0;
     }
   } else {
     time = 0;
-    let { genome, score } = playMatch(config, bestGenome);
-    if (score > bestScore) {
-      bestScore = score;
-      bestGenome = genome;
-      policy.inputs.push(bestScore);
+    let games = Array(Math.pow(2, config.batch - 1)).fill().map(x => (new Game(config, bestGenome, 0.5 * trial)))
+    games.forEach(game => {game.step(config.time)});
+    for (let b = games.length / 2; b >= 1; b /= 2) {
+      for (let i = 0; i < b; i++) {
+        games[i] = new Game(config, crossOver(games[2*i].best().network.genome, games[2*i + 1].best().network.genome), (0.5 * trial) / (i + 2));
+        games[i].step(config.time);
+      }
     }
-    let network = new NNetwork([0], config.shape);
-    network.genome = bestGenome;
+    let batchBest = games[0].best()
+    if (batchBest.score > policy.inputs[policy.inputs.length - 1]) {
+      policy.inputs.push(batchBest.score);
+      bestGenome = batchBest.network.genome;
+      trial = 1;
+    } else {
+      trial++
+    }
     background(255);
-    network.render(config.width / 2, config.height / 2, 100, 100)
+    let net = new NNetwork(0, config.shape);
+    net.genome = bestGenome;
+    net.render(config.width / 2 - 50, config.height / 2, 100, 100);
+    batchBest.network.render(config.width / 2 - 40, config.height / 4, 80, 80)
     policy.render(10, config.height - 100, 5);
   }
 }
@@ -75,7 +75,7 @@ function playMatch(config, genome = undefined) {
   //Play the match
   let result = 0;
   for (let time = 0; time < config.time || result != 0; time++) {
-    logic(players, ball);
+    logic(players, ball, goal0, goal1);
     for (let i = 0; i < networks.length; i++) {
       if (i < networks.length / 2) {
         networks[i].forward(players[i].inputs(players, ball, goal1));
@@ -130,13 +130,15 @@ function initializeMatch(genome = undefined) {
     networks[i + config.teamSize] = new NNetwork(players[i + config.teamSize].inputs(players, ball, goal0), config.shape, true);
     if (genome) {
         networks[i].genome = genome;
+        networks[i].mutate(10, false);
         networks[i + config.teamSize].genome = genome;
+        networks[i + config.teamSize].mutate(10, false);
     }
   }
   return { goal0: goal0, goal1: goal1, ball: ball, networks: networks, players: players };
 }
 
-function logic(players, ball) {
+function logic(players, ball, goal0, goal1) {
   //Player-ball collision logic
   for (let i = 0; i < players.length; i++) {
     var dx = players[i].x - ball.x;
