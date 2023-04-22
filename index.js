@@ -17,7 +17,7 @@ function playGame(policyNet, football) {
     const gameGradients = [];
     const maxStepsPerGame = 100;
     for (let t = 0; t < maxStepsPerGame; t++) {
-        const  [ gradients, action ] = policyNet.getGradientsAndActions(football.getStateTensor());
+        const  [ gradients, action ] = policyNet.getGradientsAndActions(football.getStateTensor(0));
         pushGradients(gameGradients, gradients.grad);
         const actions = action // todo: add human input
         const isDone = football.update(actions);

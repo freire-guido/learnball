@@ -5,23 +5,20 @@ export class PolicyNetwork {
         this.optimizer =  optimizer
         this.policyNet = tf.sequential();
         hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
-            console.log(i === 0 ? [3, 2] : undefined);
             this.policyNet.add(tf.layers.dense({
                 units: hiddenLayerSize,
                 activation: 'relu',
-                inputShape: i === 0 ? [5, 8] : undefined
+                inputShape: i === 0 ? [2, 3] : undefined
             }));
         });
-        this.policyNet.add(tf.layers.dense({units: 2}));
+        this.policyNet.add(tf.layers.dense({units: 1}));
     }
     getGradientsAndActions(inputTensor) {
         const f = () => tf.tidy(() => {
-            console.log(inputTensor.shape)
-            console.log(this.policyNet.inputShape)
-            const logits = this.policyNet.predict(inputTensor);
+            const logits = this.policyNet.predict(inputTensor.expandDims(0)).reshape([2, 1]);
             const sig = tf.sigmoid(logits);
-            const probs = sig.transpose().concat(tf.sub(1, sig).transpose(), 1);
-            const actions = tf.multinomial(probs, 1, null, true).transpose();
+            const probs = tf.concat([sig, tf.sub(1, sig)], 1);
+            const actions = tf.multinomial(probs, 1, null, true);
             return tf.losses.sigmoidCrossEntropy(tf.sub(1, actions), logits).asScalar(); // todo: tf.sub(-1, actions) ?
         });
         return [tf.variableGrads(f), actions];
