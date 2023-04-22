@@ -1,5 +1,9 @@
-class PolicyNetwork {
+import * as tf from '@tensorflow/tfjs';
+
+export class PolicyNetwork {
     construct(hiddenLayerSizes, optimizer) {
+        this.gradients = [];
+        this.rewards = [];
         this.optimizer =  optimizer
         this.policyNet = tf.sequential();
         hiddenLayerSizes.forEach((hiddenLayerSize, i) => {
@@ -21,13 +25,18 @@ class PolicyNetwork {
         });
         return [tf.variableGrads(f), actions];
     }
-    pushGradients(record, gradients) {
-        for (const key in gradients) {
-          if (key in record) {
-            record[key].push(gradients[key]);
-          } else {
-            record[key] = [gradients[key]];
-          }
-        }
+    applyGradients() {
+        tf.tidy(() => {
+            const discountedRewards = discountAndNormalizeRewards(this.rewards);
+            this.optimizer.applyGradients(scaleAndAverageGradients(this.gradients, discountedRewards));
+        });
+    }
+    discountAndNormalizeRewards(rewards) {
+        // todo: implement
+        return rewards
+    }
+    scaleAndAverageGradients(allGradients, normalizedRewards) {
+        // todo: implement
+        return allGradients
       }
 }
