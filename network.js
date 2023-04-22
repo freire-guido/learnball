@@ -13,20 +13,21 @@ export class PolicyNetwork {
         });
         this.policyNet.add(tf.layers.dense({units: 1}));
     }
-    getGradientsAndActions(inputTensor) {
+    getGradientsAndSaveActions(inputTensor) {
         const f = () => tf.tidy(() => {
             const logits = this.policyNet.predict(inputTensor.expandDims(0)).reshape([2, 1]);
             const sig = tf.sigmoid(logits);
             const probs = tf.concat([sig, tf.sub(1, sig)], 1);
             const actions = tf.multinomial(probs, 1, null, true);
-            return tf.losses.sigmoidCrossEntropy(tf.sub(1, actions), logits).asScalar(); // todo: tf.sub(-1, actions) ?
+            this.actions = actions.dataSync(); // err: grad multinomial
+            return tf.losses.sigmoidCrossEntropy(tf.sub(1, tf.tensor2d(this.actions, actions.shape)), logits).asScalar(); // todo: tf.sub(-1, actions) ?
         });
-        return [tf.variableGrads(f), actions];
+        return [tf.variableGrads(f), this.actions];
     }
     applyGradients() {
         tf.tidy(() => {
-            const discountedRewards = discountAndNormalizeRewards(this.rewards);
-            this.optimizer.applyGradients(scaleAndAverageGradients(this.gradients, discountedRewards));
+            const discountedRewards = this.discountAndNormalizeRewards(this.rewards);
+            this.optimizer.applyGradients(this.scaleAndAverageGradients(this.gradients, discountedRewards));
         });
     }
     discountAndNormalizeRewards(rewards) {
