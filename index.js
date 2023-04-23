@@ -5,7 +5,7 @@ function train() {
     const numGames = 5;
     // todo: tune policy and game parameters
     const policyNet = new PolicyNetwork([8, 5, 4], tf.train.adam(0.05));
-    const football = new Football(0.5, 2);
+    const football = new Football(0.005, 2);
     for (let i = 0; i < numGames; i++) {
         playGame(policyNet, football);
     }
@@ -15,7 +15,7 @@ function playGame(policyNet, football) {
     football.setRandomState();
     const gameRewards = [];
     const gameGradients = [];
-    const maxStepsPerGame = 100;
+    const maxStepsPerGame = 10000;
     for (let t = 0; t < maxStepsPerGame; t++) {
         const gradients = policyNet.getGradientsAndSaveActions(football.getStateTensor(0));
         pushGradients(gameGradients, gradients.grad);
@@ -27,12 +27,12 @@ function playGame(policyNet, football) {
         } else {
             gameRewards.push(-1);
         }
+        renderGame(football);
     }
     pushGradients(policyNet.gradients, gameGradients);
     policyNet.rewards.push(gameRewards);
     // todo: epochs
     policyNet.applyGradients();
-    renderGame(football);
     return [gameRewards, gameGradients];
 
     function pushGradients(record, gradients) {
@@ -47,12 +47,16 @@ function playGame(policyNet, football) {
 }
 
 function renderGame(football) {
-    let t = 0
-    const canvas = document.getElementById('football');
+    const canvas = document.getElementById('football')
     const context = canvas.getContext('2d');
-    football.players.forEach((player, id) => {
-        t++;
-    })
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    const players = football.players.dataSync();
+    const ball = football.ball.dataSync();
+    for (let i = 0; i < players.length / 2 - 2; i++) {
+        context.rect(players[i], players[i + players.length / 2], football.playerSize, football.playerSize);
+        context.fill();
+    }
 }
 
 train();
