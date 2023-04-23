@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!--libs-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="lib.js"></script>
-    <!--p5-->
-    <script src="network.js"></script>
-    <script src="sketch.js"></script>
+    <!-- Import TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+    <!-- Import tfjs-vis -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
+    <script type="module" src="index.js"></script>
   </head>
   <body>
-    <main>
-    </main>
+    <section>
+      <div>
+        <canvas id="football" height="150px" width="500px"></canvas>
+      </div>
+    </section>
   </body>
 </html>
