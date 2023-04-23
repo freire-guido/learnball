@@ -10,7 +10,10 @@ export class Football {
         this.setRandomState();
     }
     setRandomState() {
-        this.players = tf.randomUniform([2, this.teamSize + 1], this.pitchWidth - this.pitchWidth / 2, this.pitchWidth + this.pitchWidth / 2);
+        this.players = tf.concat([
+            tf.randomUniform([1, this.teamSize + 1], this.pitchWidth / 2 - this.pitchHeight / 2, this.pitchWidth / 2 + this.pitchHeight / 2),
+            tf.randomUniform([1, this.teamSize + 1], 0, this.pitchHeight)
+        ]);
         this.ball = tf.randomUniform([2, 1], this.pitchWidth - this.pitchWidth / 2, this.pitchWidth + this.pitchWidth / 2);
     }
     getStateTensor(skip = undefined) {

@@ -22,7 +22,7 @@ export class PolicyNetwork {
             this.actions = actions.dataSync(); // err: grad multinomial
             return tf.losses.sigmoidCrossEntropy(tf.sub(1, tf.tensor2d(this.actions, actions.shape)), logits).asScalar(); // todo: tf.sub(-1, actions) ?
         });
-        return [tf.variableGrads(f), this.actions];
+        return tf.variableGrads(f);
     }
     applyGradients() {
         tf.tidy(() => {
