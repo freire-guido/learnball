@@ -17,10 +17,10 @@ export class Football {
         return this.players.slice([0, 0], [2, skip]).concat([this.players.slice([0, skip + 1]), this.ball], 1);
     }
     async update(actions) {
-        return await tf.tidy(() => {
-            this.players = this.players.add(actions.mul(epsilon));
+        return tf.tidy(() => {
+            this.players = this.players.add(actions.mul(this.epsilon));
             const dplayer = tf.sub(this.players, this.ball);
-            const collisions = dplayer.booleanMaskAsync(dplayer.euclideanNorm(1).less(this.playerSize, this.ballSize));
+            const collisions = this.booleanMask(dplayer, dplayer.euclideanNorm(0).less(this.playerSize, this.ballSize));
             if (collisions.shape[0] != 0) {
                 this.ball = this.ball.sub(collisions.sum(0));
             }
@@ -30,5 +30,14 @@ export class Football {
     isDone() {
         //missing opponent goal and out of field conditions
         return tf.sub(this.pitchWidth, this.ball.slice([0, 0], [1, 1])).less(this.playerSize) && tf.sub(this.pitchHeight * 0.5, this.ball.slice([0, 1])).abs().less(goalWidth);
+    }
+    booleanMask(tensor, mask, axis = 0) {
+        const indices = [];
+        for (let i = 0; i < mask.length; i++) {
+            if (mask[i]) {
+                indices.push(i);
+            }
+        }
+        return tensor.gather(indices, axis);
     }
 }
