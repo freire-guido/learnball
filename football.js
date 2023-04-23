@@ -14,7 +14,10 @@ export class Football {
             tf.randomUniform([1, this.teamSize + 1], this.pitchWidth / 2 - this.pitchHeight / 2, this.pitchWidth / 2 + this.pitchHeight / 2),
             tf.randomUniform([1, this.teamSize + 1], 0, this.pitchHeight)
         ]);
-        this.ball = tf.randomUniform([2, 1], this.pitchWidth - this.pitchWidth / 2, this.pitchWidth + this.pitchWidth / 2);
+        this.ball = tf.concat([
+            tf.randomUniform([1, 1], this.pitchWidth / 2 - this.pitchHeight / 4, this.pitchWidth / 2 + this.pitchHeight / 4),
+            tf.randomUniform([1, 1], 0, this.pitchHeight /2)
+        ]);
     }
     getStateTensor(skip = undefined) {
         if (skip !== undefined) {
@@ -28,24 +31,13 @@ export class Football {
         this.players = this.players.add(actions.mul(this.epsilon));
         return tf.tidy(() => {
             const dplayer = tf.sub(this.players, this.ball);
-            const collisions = this.booleanMask(dplayer, dplayer.euclideanNorm(0).less(this.playerSize, this.ballSize), 1);
-            if (collisions.shape[1] != 0) {
-                this.ball = this.ball.sub(collisions.sum(0));
-            }
+            const collisions = dplayer.euclideanNorm(0).less(this.playerSize + this.ballSize).reshape([3, 1]);
+            this.ball = tf.keep(this.ball.sub(tf.matMul(dplayer, collisions).mul(this.epsilon)));
             return this.isDone();
         })
     }
     isDone() {
         //missing opponent goal and out of field conditions
-        return tf.sub(this.pitchWidth, this.ball.slice([0, 0], [1, 1])).less(this.playerSize) && tf.sub(this.pitchHeight * 0.5, this.ball.slice([1, 0])).abs().less(this.goalWidth).dataSync()[0];
-    }
-    booleanMask(tensor, mask, axis = 0) {
-        const indices = [];
-        for (let i = 0; i < mask.length; i++) {
-            if (mask[i]) {
-                indices.push(i);
-            }
-        }
-        return tensor.gather(indices, axis);
+        return tf.logicalAnd(tf.sub(this.pitchWidth, this.ball.slice([0, 0], [1, 1])).less(this.playerSize), tf.sub(this.pitchHeight * 0.5, this.ball.slice([1, 0])).abs().less(this.goalWidth)).dataSync()[0];
     }
 }

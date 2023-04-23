@@ -16,9 +16,9 @@ export class PolicyNetwork {
     getGradientsAndSaveActions(inputTensor) {
         const f = () => tf.tidy(() => {
             const logits = this.policyNet.predict(inputTensor.expandDims(0)).reshape([2, 1]);
-            const sig = tf.sigmoid(logits);
+            const sig = tf.sigmoid(logits); // err: sig negative
             const probs = tf.concat([sig, tf.sub(1, sig)], 1);
-            const actions = tf.multinomial(probs, 1, null, true);
+            const actions = tf.multinomial(probs, 1, null, true).mul(sig.sign());
             this.actions = actions.dataSync(); // err: grad multinomial
             return tf.losses.sigmoidCrossEntropy(tf.sub(1, tf.tensor2d(this.actions, actions.shape)), logits).asScalar(); // todo: tf.sub(-1, actions) ?
         });
