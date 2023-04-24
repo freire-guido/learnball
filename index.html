@@ -2,12 +2,19 @@
 <html>
   <head>
     <!-- Import TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <!-- Import tfjs-vis -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
     <script type="module" src="index.js"></script>
   </head>
   <body>
+    <section>
+      <div class="input-div">
+        <label class="input-label">Render:</label>
+        <input type="checkbox" id="render" />
+      </div>
+      <div id="plot"></div>
+    </section>
     <section>
       <canvas id="football" height="200px" width="400px"></canvas>
     </section>

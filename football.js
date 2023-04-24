@@ -4,19 +4,19 @@ export class Football {
         this.teamSize = teamSize;
         this.playerSize = 20;
         this.ballSize = 5;
-        this.pitchWidth = 200;
+        this.pitchWidth = 400;
         this.pitchHeight = this.pitchWidth * 0.5;
         this.goalWidth = this.pitchHeight * 0.8;
         this.setRandomState();
     }
     setRandomState() {
         this.players = tf.concat([
-            tf.randomUniform([1, this.teamSize + 1], this.pitchWidth / 2 - this.pitchHeight / 2, this.pitchWidth / 2 + this.pitchHeight / 2),
-            tf.randomUniform([1, this.teamSize + 1], 0, this.pitchHeight)
+            tf.randomUniform([1, this.teamSize + 1], this.pitchWidth / 3, 2 * this.pitchWidth / 3),
+            tf.randomUniform([1, this.teamSize + 1], this.pitchHeight / 3, 2 * this.pitchHeight / 3)
         ]);
         this.ball = tf.concat([
-            tf.randomUniform([1, 1], this.pitchWidth / 2 - this.pitchHeight / 4, this.pitchWidth / 2 + this.pitchHeight / 4),
-            tf.randomUniform([1, 1], 0, this.pitchHeight /2)
+            tf.randomUniform([1, 1], this.pitchWidth / 4, 3 * this.pitchWidth / 4),
+            tf.randomUniform([1, 1], this.pitchHeight / 4 , 3 * this.pitchHeight / 4)
         ]);
     }
     getStateTensor(skip = undefined) {
@@ -29,9 +29,10 @@ export class Football {
     }
     update(actions) {
         this.players = this.players.add(actions.mul(this.epsilon));
+        this.players.slice([0, 1]).print();
         return tf.tidy(() => {
             const dplayer = tf.sub(this.players, this.ball);
-            const collisions = dplayer.euclideanNorm(0).less(this.playerSize + this.ballSize).reshape([3, 1]);
+            const collisions = dplayer.euclideanNorm(0).less(this.playerSize + this.ballSize).reshape([this.teamSize + 1, 1]);
             this.ball = tf.keep(this.ball.sub(tf.matMul(dplayer, collisions).mul(this.epsilon)));
             return this.isDone();
         })
