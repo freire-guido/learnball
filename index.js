@@ -1,12 +1,16 @@
 import { Football } from './football.js';
 import { PolicyNetwork } from './network.js';
 
+const gameContext = document.getElementById('football').getContext('2d');
+const plotCanvas = document.getElementById('plot');
+
 const numIterationsInput = document.getElementById('num-iterations');
 const gamesPerIterationInput = document.getElementById('games-per-iteration');
 const maxStepsPerGameInput = document.getElementById('max-steps-per-game');
 const learningRateInput = document.getElementById('learning-rate');
 const renderCheckbox = document.getElementById('render');
 const trainButton = document.getElementById('train');
+
 let doRender = true;
 
 async function setup() {
@@ -38,7 +42,9 @@ async function setup() {
 
 async function train(policyNet, football, numGames, maxStepsPerGame) {
     for (let i = 0; i < numGames; i++) {
-        await playGame(policyNet, football, maxStepsPerGame);
+        const [ gameRewards, gameGradients ] = await playGame(policyNet, football, maxStepsPerGame);
+        pushGradients(policyNet.gradients, gameGradients);
+        policyNet.rewards.push(gameRewards);
         renderPlot(policyNet);
         await tf.nextFrame();
     }
@@ -60,32 +66,19 @@ async function playGame(policyNet, football, maxSteps) {
             gameRewards.push(0);
             break;
         } else {
-            gameRewards.push(tf.sub(football.ball, football.players.gather([0], 1)).euclideanNorm(0).dataSync()[0]);
+            gameRewards.push(-1);
         }
         if (doRender) {
             renderGame(football);
             await tf.nextFrame();
         }
     }
-    pushGradients(policyNet.gradients, gameGradients);
-    policyNet.rewards.push(gameRewards);
     await tf.nextFrame();
     return [gameRewards, gameGradients];
-
-    function pushGradients(record, gradients) {
-        for (const key in gradients) {
-          if (key in record) {
-            record[key].push(gradients[key]);
-          } else {
-            record[key] = [gradients[key]];
-          }
-        }
-    }
 }
 
 function renderGame(football) {
-    const canvas = document.getElementById('football')
-    const context = canvas.getContext('2d');
+    
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.strokeRect(0, 0, football.pitchWidth, football.pitchHeight);
     context.strokeRect(0, football.pitchHeight / 2 - football.goalWidth / 2, football.playerSize, football.goalWidth);
@@ -110,18 +103,24 @@ function renderGame(football) {
     context.fill();
 }
 
-function renderPlot(policyNet) {
+function renderPlot(meanLosses) {
     const canvas = document.getElementById('plot')
-    const rewardsPerGame = [];
-    policyNet.rewards.forEach((reward, i) => {
-        rewardsPerGame.push({x: i, y: mean(reward)});
-    })
-    tfvis.render.linechart(canvas, {values: rewardsPerGame}, {
+    tfvis.render.linechart(plot, {values: meanLosses}, {
       xLabel: 'Game',
-      yLabel: 'Mean Reward',
+      yLabel: 'Mean Loss',
       width: 400,
       height: 200,
     });
+}
+
+function pushGradients(record, gradients) {
+    for (const key in gradients) {
+      if (key in record) {
+        record[key].push(gradients[key]);
+      } else {
+        record[key] = [gradients[key]];
+      }
+    }
 }
 
 function mean(a) {
