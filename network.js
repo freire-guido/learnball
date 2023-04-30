@@ -1,6 +1,6 @@
 export class PolicyNetwork {
     constructor(hiddenLayerSizes, optimizer) {
-        this.gradients = [];
+        this.gradients = {};
         this.rewards = [];
         this.optimizer =  optimizer
         this.policyNet = tf.sequential();
@@ -27,7 +27,7 @@ export class PolicyNetwork {
     applyGradients() {
         tf.tidy(() => {
             const discountedRewards = this.discountAndNormalizeRewards(this.rewards, 0.9);
-            this.optimizer.applyGradients(this.scaleAndAverageGradients(this.gradients, discountedRewards));
+            this.optimizer.applyGradients(this.scaleAndAverageGradients(discountedRewards));
         });
     }
     discountRewards(rewards, discountRate) {
@@ -53,8 +53,32 @@ export class PolicyNetwork {
             return normalized;
         });
     }
-    scaleAndAverageGradients(allGradients, normalizedRewards) {
-        // todo: implement
-        return allGradients
-      }
+    scaleAndAverageGradients(normalizedRewards) {
+        return tf.tidy(() => {
+          const gradients = {};
+          for (const varName in this.gradients) {
+            gradients[varName] = tf.tidy(() => {
+              // Stack gradients together.
+              const varGradients = this.gradients[varName].map(
+                  varGameGradients => tf.stack(varGameGradients));
+              // Expand dimensions of reward tensors to prepare for multiplication
+              // with broadcasting.
+              const expandedDims = [];
+              for (let i = 0; i < varGradients[0].rank - 1; ++i) {
+                expandedDims.push(1);
+              }
+              const reshapedNormalizedRewards = normalizedRewards.map(
+                  rs => rs.reshape(rs.shape.concat(expandedDims)));
+              for (let g = 0; g < varGradients.length; ++g) {
+                // This mul() call uses broadcasting.
+                varGradients[g] = varGradients[g].mul(reshapedNormalizedRewards[g]);
+              }
+              // Concatenate the scaled gradients together, then average them across
+              // all the steps of all the games.
+              return tf.mean(tf.concat(varGradients, 0), 0);
+            });
+          }
+          return gradients;
+        });
+    }
 }

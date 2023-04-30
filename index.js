@@ -53,7 +53,7 @@ async function train(policyNet, football, numGames, maxStepsPerGame) {
         await tf.nextFrame();
     }
     policyNet.applyGradients();
-    tf.dispose(policyNet.gradients);
+    policyNet.gradients = {};
     policyNet.rewards = [];
     return sumReward / numGames;
 }
@@ -64,7 +64,7 @@ async function playGame(policyNet, football, maxSteps) {
     const gameGradients = [];
     for (let t = 0; t < maxSteps; t++) {
         const gradients = policyNet.getGradientsAndSaveActions(football.getStateTensor(1));
-        pushGradients(gameGradients, gradients.grad);
+        pushGradients(gameGradients, gradients.grads);
         const actions = tf.tensor2d(policyNet.actions, [2, 1]).concat([[[0], [0]]], 1) // todo: add human input
         const isDone = football.update(actions);
         if (isDone) {
@@ -133,10 +133,6 @@ function sum(a) {
         acum += a[i]
     }
     return acum;
-}
-
-function mean(a) {
-    return sum(a) / a.length;
 }
 
 setup();
