@@ -8,7 +8,7 @@ export class PolicyNetwork {
             this.policyNet.add(tf.layers.dense({
                 units: hiddenLayerSize,
                 activation: 'relu',
-                inputShape: i === 0 ? [2, 3] : undefined
+                inputShape: i === 0 ? [2, 2] : undefined
             }));
         });
         this.policyNet.add(tf.layers.dense({units: 1}));
@@ -26,13 +26,32 @@ export class PolicyNetwork {
     }
     applyGradients() {
         tf.tidy(() => {
-            const discountedRewards = this.discountAndNormalizeRewards(this.rewards);
+            const discountedRewards = this.discountAndNormalizeRewards(this.rewards, 0.9);
             this.optimizer.applyGradients(this.scaleAndAverageGradients(this.gradients, discountedRewards));
         });
     }
-    discountAndNormalizeRewards(rewards) {
-        // todo: implement
-        return rewards
+    discountRewards(rewards, discountRate) {
+        const discountedBuffer = tf.buffer([rewards.length]);
+        let prev = 0;
+        for (let i = rewards.length - 1; i >= 0; --i) {
+            const current = discountRate * prev + rewards[i];
+            discountedBuffer.set(current, i);
+            prev = current;
+        }
+        return discountedBuffer.toTensor();
+    }
+    discountAndNormalizeRewards(rewardSequences, discountRate) {
+        return tf.tidy(() => {
+            const discounted = [];
+            for (const sequence of rewardSequences) {
+                discounted.push(this.discountRewards(sequence, discountRate))
+            }
+            const concatenated = tf.concat(discounted);
+            const mean = tf.mean(concatenated);
+            const std = tf.sqrt(tf.mean(tf.square(concatenated.sub(mean))));
+            const normalized = discounted.map(rs => rs.sub(mean).div(std));
+            return normalized;
+        });
     }
     scaleAndAverageGradients(allGradients, normalizedRewards) {
         // todo: implement
