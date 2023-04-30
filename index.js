@@ -1,7 +1,12 @@
 import { Football } from './football.js';
 import { PolicyNetwork } from './network.js';
 
+const numIterationsInput = document.getElementById('num-iterations');
+const gamesPerIterationInput = document.getElementById('games-per-iteration');
+const maxStepsPerGameInput = document.getElementById('max-steps-per-game');
+const learningRateInput = document.getElementById('learning-rate');
 const renderCheckbox = document.getElementById('render');
+const trainButton = document.getElementById('train');
 let doRender = true;
 
 async function setup() {
@@ -9,34 +14,45 @@ async function setup() {
         doRender = renderCheckbox.checked;
     })
     renderCheckbox.checked = doRender;
+    trainButton.disabled = false;
+    trainButton.addEventListener('click', async () => {
+        const numIterations = Number.parseInt(numIterationsInput.value);
+        const gamesPerIteration = Number.parseInt(gamesPerIterationInput.value);
+        const maxStepsPerGame = Number.parseInt(maxStepsPerGameInput.value);
+        const learningRate = Number.parseInt(learningRateInput.value);
+        const policyNet = new PolicyNetwork([3, 3], tf.train.adam(learningRate));
+        const football = new Football(1.5, 1);
+
+        for (let i = 0; i < numIterations; i++) {
+            await train(policyNet, football, gamesPerIteration, maxStepsPerGame);
+        }
+    })
 
     tfvis.render.linechart(document.getElementById('plot'), {values: {}}, {
       xLabel: 'Game',
       yLabel: 'Loss',
-      width: 600,
+      width: 400,
       height: 200,
     });
 }
 
-async function train() {
-    const numGames = 10000;
-    // todo: tune policy and game parameters
-    const policyNet = new PolicyNetwork([8, 5, 4], tf.train.adam(0.05));
-    const football = new Football(1.5, 1);
+async function train(policyNet, football, numGames, maxStepsPerGame) {
     for (let i = 0; i < numGames; i++) {
-        await playGame(policyNet, football);
+        await playGame(policyNet, football, maxStepsPerGame);
         renderPlot(policyNet);
         await tf.nextFrame();
     }
+    policyNet.applyGradients();
+    tf.dispose(policyNet.gradients);
+    policyNet.rewards = [];
 }
 
-async function playGame(policyNet, football) {
+async function playGame(policyNet, football, maxSteps) {
     football.setRandomState();
     const gameRewards = [];
     const gameGradients = [];
-    const maxStepsPerGame = 250;
-    for (let t = 0; t < maxStepsPerGame; t++) {
-        const gradients = policyNet.getGradientsAndSaveActions(football.getStateTensor());
+    for (let t = 0; t < maxSteps; t++) {
+        const gradients = policyNet.getGradientsAndSaveActions(football.getStateTensor(1));
         pushGradients(gameGradients, gradients.grad);
         const actions = tf.tensor2d(policyNet.actions, [2, 1]).concat([[[0], [0]]], 1) // todo: add human input
         const isDone = football.update(actions);
@@ -44,7 +60,7 @@ async function playGame(policyNet, football) {
             gameRewards.push(0);
             break;
         } else {
-            gameRewards.push(-1);
+            gameRewards.push(tf.sub(football.ball, football.players.gather([0], 1)).euclideanNorm(0).dataSync()[0]);
         }
         if (doRender) {
             renderGame(football);
@@ -54,8 +70,6 @@ async function playGame(policyNet, football) {
     pushGradients(policyNet.gradients, gameGradients);
     policyNet.rewards.push(gameRewards);
     await tf.nextFrame();
-    // todo: epochs
-    policyNet.applyGradients();
     return [gameRewards, gameGradients];
 
     function pushGradients(record, gradients) {
@@ -100,15 +114,22 @@ function renderPlot(policyNet) {
     const canvas = document.getElementById('plot')
     const rewardsPerGame = [];
     policyNet.rewards.forEach((reward, i) => {
-        rewardsPerGame.push({x: i, y: -reward.length});
+        rewardsPerGame.push({x: i, y: mean(reward)});
     })
     tfvis.render.linechart(canvas, {values: rewardsPerGame}, {
       xLabel: 'Game',
-      yLabel: 'Loss',
+      yLabel: 'Mean Reward',
       width: 400,
       height: 200,
     });
-  }
+}
+
+function mean(a) {
+    let acum = 0
+    for (let i = 0; i < a.length; i++) {
+        acum += a[i]
+    }
+    return acum / a.length;
+}
 
 setup();
-train();
