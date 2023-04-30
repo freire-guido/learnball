@@ -1,7 +1,7 @@
 import { Football } from './football.js';
 import { PolicyNetwork } from './network.js';
 
-const gameContext = document.getElementById('football').getContext('2d');
+const gameCanvas = document.getElementById('football');
 const plotCanvas = document.getElementById('plot');
 
 const numIterationsInput = document.getElementById('num-iterations');
@@ -27,30 +27,35 @@ async function setup() {
         const policyNet = new PolicyNetwork([3, 3], tf.train.adam(learningRate));
         const football = new Football(1.5, 1);
 
+        const meanRewards = [] 
         for (let i = 0; i < numIterations; i++) {
-            await train(policyNet, football, gamesPerIteration, maxStepsPerGame);
+            const meanReward = await train(policyNet, football, gamesPerIteration, maxStepsPerGame);
+            meanRewards.push({x: i + 1, y: meanReward});
+            renderPlot(meanRewards);
         }
     })
 
     tfvis.render.linechart(document.getElementById('plot'), {values: {}}, {
-      xLabel: 'Game',
-      yLabel: 'Loss',
+      xLabel: 'Iteration',
+      yLabel: 'Mean Reward',
       width: 400,
       height: 200,
     });
 }
 
 async function train(policyNet, football, numGames, maxStepsPerGame) {
+    let sumReward = 0;
     for (let i = 0; i < numGames; i++) {
         const [ gameRewards, gameGradients ] = await playGame(policyNet, football, maxStepsPerGame);
         pushGradients(policyNet.gradients, gameGradients);
         policyNet.rewards.push(gameRewards);
-        renderPlot(policyNet);
+        sumReward += sum(gameRewards)
         await tf.nextFrame();
     }
     policyNet.applyGradients();
     tf.dispose(policyNet.gradients);
     policyNet.rewards = [];
+    return sumReward / numGames;
 }
 
 async function playGame(policyNet, football, maxSteps) {
@@ -78,36 +83,35 @@ async function playGame(policyNet, football, maxSteps) {
 }
 
 function renderGame(football) {
-    
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.strokeRect(0, 0, football.pitchWidth, football.pitchHeight);
-    context.strokeRect(0, football.pitchHeight / 2 - football.goalWidth / 2, football.playerSize, football.goalWidth);
-    context.strokeRect(football.pitchWidth, football.pitchHeight / 2 - football.goalWidth / 2, -football.playerSize, football.goalWidth);
+    const ctx = gameCanvas.getContext('2d');
+    ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+    ctx.strokeRect(0, 0, football.pitchWidth, football.pitchHeight);
+    ctx.strokeRect(0, football.pitchHeight / 2 - football.goalWidth / 2, football.playerSize, football.goalWidth);
+    ctx.strokeRect(football.pitchWidth, football.pitchHeight / 2 - football.goalWidth / 2, -football.playerSize, football.goalWidth);
 
     const players = football.players.dataSync();
     const ball = football.ball.dataSync();
-    context.beginPath();
-    context.fillStyle = "red";
+    ctx.beginPath();
+    ctx.fillStyle = "red";
     for (let i = 0; i < players.length / 2 - 1; i++) {
-        context.rect(players[i] - football.playerSize / 2, players[i + players.length / 2] - football.playerSize / 2, football.playerSize, football.playerSize);
+        ctx.rect(players[i] - football.playerSize / 2, players[i + players.length / 2] - football.playerSize / 2, football.playerSize, football.playerSize);
         // todo: drawPlayer helper
     }
-    context.fill();
-    context.beginPath();
-    context.fillStyle = "blue";
-    context.rect(players[players.length / 2 - 1] - football.playerSize / 2, players[players.length - 1] - football.playerSize / 2, football.playerSize, football.playerSize);
-    context.fill();
-    context.beginPath();
-    context.fillStyle = "green";
-    context.rect(ball[0] - football.ballSize / 2, ball[1] - football.ballSize / 2, football.ballSize, football.ballSize);
-    context.fill();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = "blue";
+    ctx.rect(players[players.length / 2 - 1] - football.playerSize / 2, players[players.length - 1] - football.playerSize / 2, football.playerSize, football.playerSize);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = "green";
+    ctx.rect(ball[0] - football.ballSize / 2, ball[1] - football.ballSize / 2, football.ballSize, football.ballSize);
+    ctx.fill();
 }
 
-function renderPlot(meanLosses) {
-    const canvas = document.getElementById('plot')
-    tfvis.render.linechart(plot, {values: meanLosses}, {
-      xLabel: 'Game',
-      yLabel: 'Mean Loss',
+function renderPlot(meanRewards) {
+    tfvis.render.linechart(plotCanvas, {values: meanRewards}, {
+      xLabel: 'Iteration',
+      yLabel: 'Mean Reward',
       width: 400,
       height: 200,
     });
@@ -123,12 +127,16 @@ function pushGradients(record, gradients) {
     }
 }
 
-function mean(a) {
+function sum(a) {
     let acum = 0
     for (let i = 0; i < a.length; i++) {
         acum += a[i]
     }
-    return acum / a.length;
+    return acum;
+}
+
+function mean(a) {
+    return sum(a) / a.length;
 }
 
 setup();

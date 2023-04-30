@@ -29,7 +29,6 @@ export class Football {
     }
     update(actions) {
         this.players = this.players.add(actions.mul(this.epsilon));
-        this.players.slice([0, 1]).print();
         return tf.tidy(() => {
             const dplayer = tf.sub(this.players, this.ball);
             const collisions = dplayer.euclideanNorm(0).less(this.playerSize + this.ballSize).reshape([this.teamSize + 1, 1]);
